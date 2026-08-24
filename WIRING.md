@@ -1,0 +1,7 @@
+# Wiring
+
+## S3-CAM to E32R28T
+
+- GPIO43/TX0 -> GPIO19/RX2
+- GPIO44/RX0 -> GPIO23/TX2
+- GND -> GND

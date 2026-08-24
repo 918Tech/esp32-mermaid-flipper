@@ -1,0 +1,12 @@
+{
+  "name": "esp32-flipper-codex",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.mjs",
+    "test:gateway": "node --test test/gateway.test.mjs",
+    "test:protocol": "node --test test/protocol.test.mjs",
+    "lint:secrets": "node scripts/check-secrets.mjs",
+    "validate": "node scripts/validate.mjs"
+  }
+}

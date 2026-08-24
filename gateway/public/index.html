@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP32 Flipper Codex</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #0f1f33;
+      --panel2: #132740;
+      --line: #244565;
+      --text: #edf5ff;
+      --muted: #9fb4cc;
+      --cyan: #12d5ff;
+      --violet: #a67dff;
+      --aqua: #49f0d1;
+      --green: #33dd8a;
+      --amber: #f8c85a;
+      --red: #ff6c76;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(18,213,255,.12), transparent 35%),
+        radial-gradient(circle at right, rgba(166,125,255,.10), transparent 30%),
+        var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 20px 24px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .brand {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    .badge span {
+      display: inline-grid;
+      place-items: center;
+      width: 58px;
+      height: 32px;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #0dc8ff, #9d74ff);
+      color: #05101d;
+      font-weight: 900;
+      letter-spacing: .04em;
+    }
+    .sub { color: var(--muted); font-size: 14px; }
+    .status {
+      text-align: right;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    main {
+      padding: 0 24px 24px;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+    }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card {
+      background: var(--panel2);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 100px;
+    }
+    .camera-frame {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #050b15;
+      object-fit: cover;
+      display: block;
+    }
+    .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; }
+    .value { font-size: 18px; margin-top: 8px; font-weight: 700; }
+    .ok { color: var(--green); }
+    .warn { color: var(--amber); }
+    .bad { color: var(--red); }
+    textarea, input[type="file"], input[type="text"] {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #081221;
+      color: var(--text);
+      padding: 12px;
+      font: inherit;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .row { display: grid; gap: 10px; margin-top: 12px; }
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: linear-gradient(90deg, var(--cyan), var(--violet));
+      color: #04101b;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #081221;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 120px;
+      margin: 0;
+    }
+    .diagram {
+      overflow: auto;
+      padding: 10px 0 0;
+    }
+    .hint { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .full { grid-column: 1 / -1; }
+    .log {
+      max-height: 180px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      display: grid;
+      gap: 8px;
+    }
+    .log-entry {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      padding-bottom: 8px;
+    }
+    .log-entry:last-child { border-bottom: 0; padding-bottom: 0; }
+    .ts { color: var(--muted); }
+    @media (max-width: 960px) {
+      main, .grid, .summary { grid-template-columns: 1fr; }
+      header { flex-direction: column; }
+      .status { text-align: left; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="badge"><span>918</span><div>TECH//ONE</div></div>
+      <div class="sub">Camera, touchscreen approval, and Flipper routing in one browser view.</div>
+    </div>
+    <div class="status">
+      <div id="gatewayState">Gateway: checking...</div>
+      <div id="linkState">Links: checking...</div>
+      <div id="retryState">Camera retries: 0</div>
+      <div id="proposalState">Proposal: idle</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Camera To Screen</h2>
+      <img class="camera-frame" id="cameraFrame" alt="Live camera frame from S3 board" src="/camera.jpg">
+      <div class="summary">
+        <div class="card"><div class="label">Chain</div><div class="value" id="chainState">Gateway -> Camera -> Screen -> Flipper</div></div>
+        <div class="card"><div class="label">Camera</div><div class="value ok" id="cameraSummary">Checking</div></div>
+        <div class="card"><div class="label">Approval</div><div class="value warn" id="approvalSummary">Pending</div></div>
+        <div class="card"><div class="label">Fallback</div><div class="value warn" id="fallbackSummary">Idle</div></div>
+      </div>
+      <div class="grid">
+        <div class="card"><div class="label">Camera</div><div class="value ok" id="cameraStatus">Ready for JPEG upload</div></div>
+        <div class="card"><div class="label">Screen</div><div class="value warn" id="screenStatus">Awaiting proposal</div></div>
+        <div class="card"><div class="label">Flipper</div><div class="value warn" id="flipperStatus">Optional until approval</div></div>
+      </div>
+
+      <div class="row">
+        <label class="label" for="prompt">Prompt</label>
+        <textarea id="prompt">Analyze the camera image and return a safe proposal.</textarea>
+      </div>
+      <div class="row">
+        <label class="label" for="image">JPEG image</label>
+        <input id="image" type="file" accept="image/jpeg">
+      </div>
+      <div class="actions">
+        <button id="send">Send to Gateway</button>
+        <button class="secondary" id="health">Refresh Status</button>
+      </div>
+      <div class="hint">The OpenAI key stays on the gateway. This page only uploads the selected JPEG to `/v1/propose`.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Mermaid Flow</h2>
+      <div class="diagram mermaid">
+        flowchart LR
+          CAM["Camera JPEG"] --> GW["Local Gateway"]
+          GW --> UI["Touchscreen Approval"]
+          UI --> FLIP["Flipper Zero"]
+          UI -->|deny| DROP["Discard"]
+      </div>
+    </section>
+
+    <section class="panel full">
+      <h2>Gateway Response</h2>
+      <pre id="output">{ "status": "idle" }</pre>
+    </section>
+
+    <section class="panel full">
+      <h2>Approval Log</h2>
+      <div id="approvalLog" class="log"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "loose",
+      flowchart: { curve: "basis" }
+    });
+
+    const gatewayState = document.getElementById("gatewayState");
+    const linkState = document.getElementById("linkState");
+    const proposalState = document.getElementById("proposalState");
+    const retryState = document.getElementById("retryState");
+    const chainState = document.getElementById("chainState");
+    const cameraSummary = document.getElementById("cameraSummary");
+    const approvalSummary = document.getElementById("approvalSummary");
+    const fallbackSummary = document.getElementById("fallbackSummary");
+    const cameraStatus = document.getElementById("cameraStatus");
+    const screenStatus = document.getElementById("screenStatus");
+    const flipperStatus = document.getElementById("flipperStatus");
+    const output = document.getElementById("output");
+    const approvalLog = document.getElementById("approvalLog");
+    const prompt = document.getElementById("prompt");
+    const image = document.getElementById("image");
+    const cameraFrame = document.getElementById("cameraFrame");
+    let cameraRetryCount = 0;
+    let lastCameraOk = false;
+    let pendingFrameFallback = false;
+
+    function appendLog(title, detail) {
+      const row = document.createElement("div");
+      row.className = "log-entry";
+      const time = document.createElement("div");
+      time.className = "ts";
+      time.textContent = new Date().toLocaleTimeString();
+      const body = document.createElement("div");
+      body.textContent = `${title} ${detail}`;
+      row.append(time, body);
+      approvalLog.prepend(row);
+      while (approvalLog.childElementCount > 12) approvalLog.removeChild(approvalLog.lastElementChild);
+    }
+
+    async function refresh() {
+      try {
+        const r = await fetch("/health");
+        const data = await r.json();
+        gatewayState.textContent = data.ok ? "Gateway: online" : "Gateway: degraded";
+      } catch {
+        gatewayState.textContent = "Gateway: offline";
+      }
+      try {
+        const r = await fetch("/status");
+        const data = await r.json();
+        linkState.textContent = `Links: camera ${data.camera}; touchscreen ${data.touchscreen}; flipper ${data.flipper}`;
+        cameraStatus.textContent = data.camera === "online" ? "Live camera link" : "Ready for JPEG upload";
+        screenStatus.textContent = "Touchscreen approval is active in the embedded board";
+        flipperStatus.textContent = data.flipper === "optional" ? "Optional until approval" : "Connected";
+        chainState.textContent = `Gateway ${data.gateway} -> Camera ${data.camera} -> Screen active -> Flipper ${data.flipper}`;
+        cameraSummary.textContent = data.camera === "online" ? "Online" : data.camera;
+        approvalSummary.textContent = "Physical touch required";
+        fallbackSummary.textContent = pendingFrameFallback ? "Camera fallback active" : "Normal";
+      } catch {
+        linkState.textContent = "Links: unavailable";
+        cameraStatus.textContent = "Ready for JPEG upload";
+        screenStatus.textContent = "Touchscreen approval is active in the embedded board";
+        flipperStatus.textContent = "Optional until approval";
+        chainState.textContent = "Gateway online -> Camera unavailable -> Screen active -> Flipper optional";
+        cameraSummary.textContent = "Unavailable";
+        approvalSummary.textContent = "Physical touch required";
+        fallbackSummary.textContent = "Status only";
+      }
+    }
+
+    function refreshCameraFrame() {
+      const stamp = Date.now();
+      pendingFrameFallback = false;
+      cameraFrame.onerror = () => {
+        if (lastCameraOk) {
+          cameraRetryCount += 1;
+          retryState.textContent = `Camera retries: ${cameraRetryCount}`;
+          appendLog("Camera", "frame fetch failed, fallback image shown");
+        }
+        pendingFrameFallback = true;
+        cameraFrame.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480">
+          <rect width="640" height="480" fill="#050b15"/>
+          <rect x="24" y="24" width="592" height="432" rx="24" fill="#0f1f33" stroke="#244565"/>
+          <text x="50%" y="42%" text-anchor="middle" fill="#edf5ff" font-size="28" font-family="monospace">Camera frame unavailable</text>
+          <text x="50%" y="52%" text-anchor="middle" fill="#9fb4cc" font-size="18" font-family="monospace">Gateway fallback active</text>
+        </svg>`)}`;
+        cameraSummary.textContent = "Fallback";
+        fallbackSummary.textContent = "Camera fallback active";
+      };
+      cameraFrame.onload = () => {
+        lastCameraOk = true;
+        pendingFrameFallback = false;
+        cameraSummary.textContent = "Live";
+        fallbackSummary.textContent = "Normal";
+      };
+      cameraFrame.src = `/camera.jpg?t=${stamp}`;
+    }
+
+    async function sendProposal() {
+      if (!image.files?.[0]) {
+        output.textContent = JSON.stringify({ error: "select_a_jpeg_first" }, null, 2);
+        return;
+      }
+      const file = image.files[0];
+      const bytes = await file.arrayBuffer();
+      const b64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+      proposalState.textContent = "Proposal: sending...";
+      screenStatus.textContent = "Awaiting gateway proposal";
+      const resp = await fetch("/v1/propose", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          prompt: prompt.value,
+          image_base64: b64,
+          image_mime: "image/jpeg"
+        })
+      });
+      const data = await resp.json().catch(() => ({ error: "invalid_response" }));
+      output.textContent = JSON.stringify(data, null, 2);
+      if (resp.ok && data.proposal) {
+        proposalState.textContent = "Proposal: received";
+        screenStatus.textContent = data.proposal.requires_approval ? "Approval required" : "No approval required";
+        flipperStatus.textContent = data.proposal.target === "flipper" ? "Awaiting touchscreen approval" : "Flipper not required";
+        approvalSummary.textContent = data.proposal.requires_approval ? "Approve on screen" : "No approval needed";
+        appendLog("Proposal", `${data.request_id || "n/a"} ${data.proposal.risk} ${data.proposal.target}`);
+      } else {
+        proposalState.textContent = "Proposal: blocked";
+        approvalSummary.textContent = "Blocked";
+        appendLog("Proposal", `blocked ${data.error || "unknown"}`);
+      }
+    }
+
+    document.getElementById("send").addEventListener("click", () => {
+      sendProposal().catch((err) => {
+        output.textContent = JSON.stringify({ error: String(err?.message || err) }, null, 2);
+        proposalState.textContent = "Proposal: error";
+      });
+    });
+    document.getElementById("health").addEventListener("click", refresh);
+    refresh();
+    refreshCameraFrame();
+    setInterval(refreshCameraFrame, 2500);
+  </script>
+</body>
+</html>
