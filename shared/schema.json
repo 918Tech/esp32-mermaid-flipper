@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["summary", "risk", "target", "command", "requires_approval"],
+  "properties": {
+    "summary": { "type": "string" },
+    "risk": { "enum": ["read_only", "state_change", "radio_transmit", "firmware_change"] },
+    "target": { "enum": ["none", "flipper", "marauder"] },
+    "command": { "type": "string" },
+    "requires_approval": { "type": "boolean" }
+  },
+  "additionalProperties": false
+}

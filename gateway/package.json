@@ -1,0 +1,8 @@
+{
+  "name": "esp32-flipper-codex-gateway",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test ../test/gateway.test.mjs"
+  }
+}
