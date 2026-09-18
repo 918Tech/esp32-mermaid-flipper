@@ -1,0 +1,41 @@
+name: 918 WaterPlum Defense
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  waterplum-defense:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pinned FADS WaterPlum sensor
+        run: python -m pip install "git+https://github.com/918Tech/FADS-GATE.git@1237d163036e807c35756a8e33c1c7004a8f1a3d"
+
+      - name: Evaluate repository telemetry
+        run: |
+          fads-waterplum-scan \
+            --root . \
+            --endpoint https://918-defense-systems-live-h1rjt5.v2.appdeploy.ai/api/evaluate \
+            --fail-on restricted \
+            --output waterplum-evidence.json
+
+      - name: Preserve WaterPlum evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 918-waterplum-evidence
+          path: waterplum-evidence.json
+          if-no-files-found: ignore
+          retention-days: 30
