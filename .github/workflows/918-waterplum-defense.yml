@@ -27,7 +27,7 @@ jobs:
         run: |
           fads-waterplum-scan \
             --root . \
-            --endpoint https://918-defense-systems-live-h1rjt5.v2.appdeploy.ai/api/evaluate \
+            --endpoint https://nine18-fads-waterplum.onrender.com/v1/evaluate \
             --fail-on restricted \
             --output waterplum-evidence.json
 
