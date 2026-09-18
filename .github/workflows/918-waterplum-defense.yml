@@ -21,13 +21,16 @@ jobs:
           python-version: "3.11"
 
       - name: Install pinned FADS WaterPlum sensor
-        run: python -m pip install "git+https://github.com/918Tech/FADS-GATE.git@1237d163036e807c35756a8e33c1c7004a8f1a3d"
+        run: python -m pip install "git+https://github.com/918Tech/FADS-GATE.git@4bdc2f9adc4035d4fa70a68f8743435cb0300d56"
 
       - name: Evaluate repository telemetry
         run: |
           fads-waterplum-scan \
             --root . \
             --endpoint https://nine18-fads-waterplum.onrender.com/v1/evaluate \
+            --endpoint https://nine18-fads-oregon.onrender.com/v1/evaluate \
+            --endpoint https://nine18-fads-frankfurt.onrender.com/v1/evaluate \
+            --endpoint https://nine18-fads-singapore.onrender.com/v1/evaluate \
             --fail-on restricted \
             --output waterplum-evidence.json
 
