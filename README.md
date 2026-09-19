@@ -41,6 +41,22 @@ Successful end-to-end provisioning prints:
 MERMAID_MVP_PROVISIONING_OK
 ```
 
+### Let Codex run the whole physical provisioning loop
+
+Linux/macOS/WSL:
+
+```bash
+bash scripts/codex-mermaid-mvp.sh
+```
+
+Windows PowerShell:
+
+```powershell
+.\scripts\codex-mermaid-mvp.ps1
+```
+
+These launchers use Codex non-interactive `exec` with a workspace-write sandbox, on-request approvals, and automatic approval review. They do not use `--yolo`. Codex reads `AGENTS.md`, bootstraps the local toolchain if needed, runs the audited provisioner, and stops rather than taking destructive recovery shortcuts.
+
 Run hardware discovery without writing:
 
 ```bash
