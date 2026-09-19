@@ -12,6 +12,10 @@ Codex owns the host-side build/provision/verification loop. The device identity 
 
 ## Canonical commands
 
+For a Codex-owned end-to-end run, use `scripts/codex-mermaid-mvp.sh` or `scripts/codex-mermaid-mvp.ps1`. The launcher uses auto-reviewed on-request escalation for operations that need access outside the workspace, including attached USB/serial hardware.
+
+For direct operator execution, use:
+
 Linux, macOS, or WSL:
 
 ```bash
@@ -45,6 +49,7 @@ Stop instead of guessing when:
 - zero or multiple candidate boards map to a role,
 - a classic ESP32 is not exactly 4 MB flash,
 - the S3 is not exactly 16 MB flash,
+- the flashed S3 does not report exactly 8 MB PSRAM at runtime,
 - the chip family does not match the expected role,
 - a post-flash identity beacon is missing,
 - multiple Flipper-like USB serial devices are present,
