@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-cyd-android:
@@ -16,18 +16,42 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Install PlatformIO and esptool
         run: python -m pip install "platformio==6.2.0" "esptool==4.12.0" "pyserial==3.5"
+
       - name: Shell syntax
         run: |
           bash -n android/termux/bootstrap.sh
           bash -n android/termux/cyd-build-export.sh
           bash -n android/termux/cyd-codex.sh
           bash -n android/termux/open-cyd-flasher.sh
-      - name: Build CYD
-        run: pio run -d firmware/e32r28t
+
+      - name: Build merged CYD factory image
+        env:
+          MERMAID_CI_OUTDIR: ${{ github.workspace }}/dist/cyd-android
+        run: bash android/termux/cyd-build-export.sh
+
       - name: Validate expected identity
         run: grep -F "MERMAID_HELLO role=CYD hw=ESP32-WROOM-32E-N4 proto=MVP1" firmware/e32r28t/src/main.cpp
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cyd-wroom32e-n4-mermaid
+          path: |
+            dist/cyd-android/cyd-wroom32e-n4-mermaid.factory.bin
+            dist/cyd-android/cyd-wroom32e-n4-mermaid.manifest.txt
+          if-no-files-found: error
+
+      - name: Publish Android download release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/cyd-android-codex-cli-automation'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete cyd-android-latest --cleanup-tag -y || true
+          gh release create cyd-android-latest             dist/cyd-android/cyd-wroom32e-n4-mermaid.factory.bin             dist/cyd-android/cyd-wroom32e-n4-mermaid.manifest.txt             --target "$GITHUB_SHA"             --title "CYD Android Latest"             --notes "Automated 4 MB merged factory image for the 918 MERMAID CYD / ESP32-WROOM-32E-N4 Android Web Serial path."             --prerelease
