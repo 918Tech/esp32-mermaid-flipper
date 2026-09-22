@@ -3,7 +3,7 @@
 #include <SPI.h>
 #include "../storage/UiPreferences.h"
 #include "../vendor/XPT2046_Touchscreen.h"
-struct TouchPoint { int16_t x{0}; int16_t y{0}; bool down{false}; bool valid{false}; };
+struct TouchPoint { int16_t x{0}; int16_t y{0}; int16_t rawX{0}; int16_t rawY{0}; bool down{false}; bool valid{false}; };
 class TouchController {
  public:
   bool begin();
@@ -21,7 +21,7 @@ class TouchController {
   static constexpr uint8_t TouchCs = 33;
   static constexpr uint8_t TouchIrq = 36;
   SPIClass _bus{VSPI};
-  XPT2046_Touchscreen _ts{TouchCs, TouchIrq};
+  XPT2046_Touchscreen _ts{TouchCs};
   TouchCalibration _cal{};
   uint32_t _lastSampleUs{0};
   bool _rawMode{false};
