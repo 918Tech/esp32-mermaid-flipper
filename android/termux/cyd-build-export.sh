@@ -6,7 +6,7 @@ PROJECT="$ROOT/firmware/e32r28t"
 BUILD="$PROJECT/.pio/build/e32r28t"
 NAME="cyd-wroom32e-n4-mermaid.factory.bin"
 MANIFEST_NAME="cyd-wroom32e-n4-mermaid.manifest.txt"
-RELEASE_BASE="https://github.com/918Tech/esp32-mermaid-flipper/releases/download/cyd-android-latest"
+REPO_BASE="https://raw.githubusercontent.com/918Tech/esp32-mermaid-flipper/refs/heads/feat/cyd-android-codex-cli-automation/firmware/releases/cyd"
 
 cd "$ROOT"
 
@@ -44,12 +44,12 @@ if [[ "${PREFIX:-}" == *"com.termux"* ]]; then
       fi
     done
 
-    echo "Timed out waiting for published CYD release asset: $url" >&2
+    echo "Timed out waiting for repository CYD firmware: $url" >&2
     return 1
   }
 
-  echo "[1/4] Downloading published CYD manifest"
-  wait_download "$RELEASE_BASE/$MANIFEST_NAME" "$MANIFEST" "Fetching manifest"
+  echo "[1/4] Downloading repository CYD manifest"
+  wait_download "$REPO_BASE/$MANIFEST_NAME" "$MANIFEST" "Fetching manifest"
 
   EXPECTED_SHA="$(sed -n 's/^sha256=//p' "$MANIFEST" | head -n1)"
   [[ "$EXPECTED_SHA" =~ ^[0-9a-fA-F]{64}$ ]] || {
@@ -57,8 +57,8 @@ if [[ "${PREFIX:-}" == *"com.termux"* ]]; then
     exit 3
   }
 
-  echo "[2/4] Downloading Linux-built CYD factory image"
-  wait_download "$RELEASE_BASE/$NAME" "$OUT" "Fetching factory image"
+  echo "[2/4] Downloading repository CYD factory image"
+  wait_download "$REPO_BASE/$NAME" "$OUT" "Fetching factory image"
 
   echo "[3/4] Verifying SHA-256"
   ACTUAL_SHA="$(sha256sum "$OUT" | awk '{print $1}')"
