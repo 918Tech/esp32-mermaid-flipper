@@ -1,0 +1,4 @@
+platformio==6.2.0
+pyserial==3.5
+esptool==4.12.0
+ufbt==0.2.6

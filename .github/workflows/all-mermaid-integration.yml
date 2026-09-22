@@ -1,0 +1,44 @@
+name: All Mermaid Integration
+
+on:
+  push:
+    branches:
+      - integrate/all-mermaid
+  pull_request:
+    branches:
+      - integrate/all-mermaid
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-all-mermaid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out integration branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Mermaid toolchain
+        run: python -m pip install -r requirements-mvp.txt
+
+      - name: Install release Flipper SDK
+        run: |
+          export UFBT_HOME="$GITHUB_WORKSPACE/.ufbt"
+          ufbt update --channel=release
+
+      - name: Validate all Mermaid sources
+        env:
+          UFBT_HOME: ${{ github.workspace }}/.ufbt
+        run: bash scripts/all-mermaid.sh validate

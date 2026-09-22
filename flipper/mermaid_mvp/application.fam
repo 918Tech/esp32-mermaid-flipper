@@ -1,0 +1,10 @@
+App(
+    appid="mermaid_mvp",
+    name="Mermaid MVP",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="mermaid_mvp_app",
+    stack_size=2 * 1024,
+    fap_category="Tools",
+    fap_description="918 Mermaid MVP provisioning status app",
+    fap_author="918 Technologies",
+)

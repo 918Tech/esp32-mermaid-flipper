@@ -7,6 +7,8 @@
     "test:gateway": "node --test test/gateway.test.mjs",
     "test:protocol": "node --test test/protocol.test.mjs",
     "lint:secrets": "node scripts/check-secrets.mjs",
+    "mvp:self-test": "python3 tools/mermaid_flasher.py self-test",
+    "mvp:doctor": "python3 tools/mermaid_flasher.py doctor",
     "validate": "node scripts/validate.mjs"
   }
 }
