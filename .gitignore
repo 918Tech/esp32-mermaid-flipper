@@ -18,3 +18,8 @@ node_modules/
 *.sqlite-shm
 *.zip
 *.rar
+
+# Published Mermaid CYD factory firmware is intentionally versioned.
+!firmware/releases/cyd/
+!firmware/releases/cyd/*.bin
+!firmware/releases/cyd/*.txt
