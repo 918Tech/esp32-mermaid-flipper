@@ -1,0 +1,59 @@
+name: AD5X ESP32-S3 Camera Build
+
+on:
+  push:
+    branches:
+      - feat/ad5x-s3-cam-nrflash
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ad5x-camera:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO and esptool
+        run: |
+          python -m pip install "platformio==6.2.0" "esptool==4.12.0"
+
+      - name: Build ESP32-S3 N16R8 camera firmware
+        working-directory: firmware/s3cam
+        run: pio run
+
+      - name: Create merged factory image
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD="firmware/s3cam/.pio/build/esp32-s3-devkitc-1"
+          BOOT_APP0="$(find "$HOME/.platformio/packages" -path '*/framework-arduinoespressif32/tools/partitions/boot_app0.bin' | head -n1 || true)"
+          test -f "$BUILD/bootloader.bin"
+          test -f "$BUILD/partitions.bin"
+          test -f "$BUILD/firmware.bin"
+          mkdir -p dist
+          if [ -n "$BOOT_APP0" ] && [ -f "$BOOT_APP0" ]; then
+            python -m esptool --chip esp32s3 merge_bin -o dist/ad5x-esp32s3-n16r8-camera.factory.bin               0x0 "$BUILD/bootloader.bin"               0x8000 "$BUILD/partitions.bin"               0xE000 "$BOOT_APP0"               0x10000 "$BUILD/firmware.bin"
+          else
+            python -m esptool --chip esp32s3 merge_bin -o dist/ad5x-esp32s3-n16r8-camera.factory.bin               0x0 "$BUILD/bootloader.bin"               0x8000 "$BUILD/partitions.bin"               0x10000 "$BUILD/firmware.bin"
+          fi
+          SHA="$(sha256sum dist/ad5x-esp32s3-n16r8-camera.factory.bin | awk '{print $1}')"
+          printf 'sha256=%s\n' "$SHA" > dist/ad5x-esp32s3-n16r8-camera.factory.manifest.txt
+          cp "$BUILD/firmware.bin" dist/ad5x-esp32s3-n16r8-camera.app.bin
+          ls -lh dist
+          cat dist/ad5x-esp32s3-n16r8-camera.factory.manifest.txt
+
+      - name: Upload AD5X camera firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ad5x-esp32s3-n16r8-camera
+          path: dist/*
+          if-no-files-found: error
