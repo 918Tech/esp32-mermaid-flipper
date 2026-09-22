@@ -1,0 +1,9 @@
+MERMAID_CYD_FACTORY
+hardware=ESP32-WROOM-32E-N4
+flash_size=4MB
+image=cyd-wroom32e-n4-mermaid.factory.bin
+bytes=389040
+sha256=6ac82c140c0ab2c7b2f0c4303a2ac3511adbb0b50b98911e20a8006aa2e8215f
+expected_identity=MERMAID_HELLO role=CYD hw=ESP32-WROOM-32E-N4 proto=MVP1
+source_branch=feat/cyd-android-codex-cli-automation
+source_sha=f327a12cd13870d23dd4764db1983d106045c10a
