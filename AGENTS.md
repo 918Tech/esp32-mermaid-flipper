@@ -83,3 +83,15 @@ Preserve `dist/mvp-logs/inventory.json`. A complete MVP run must show:
 - S3_N16R8 `MERMAID_HELLO` identity,
 - successful `ufbt launch`,
 - final sentinel `MERMAID_MVP_PROVISIONING_OK`.
+
+
+## Consolidated Mermaid source policy
+
+The canonical consolidation branch is `integrate/all-mermaid`.
+
+- Treat repository-root production/MVP firmware as authoritative.
+- Treat `legacy/m3rma1d-s1r3n/` and `legacy/branch-snapshots/` as migration/reference sources unless a change is explicitly promoted.
+- Read `MERMAID_CONSOLIDATION.md` before migrating legacy capabilities.
+- Use `scripts/sync-all-mermaid.sh` to materialize all known legacy Mermaid branch snapshots for comparison.
+- Do not overwrite current production firmware with a legacy snapshot wholesale.
+- Preserve physical acceptance gates; merged source is not equivalent to tested hardware.
