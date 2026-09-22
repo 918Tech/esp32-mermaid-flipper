@@ -82,11 +82,34 @@ void UiController::applyBacklight(bool on) {
 void UiController::drawBootScreen() {
   _display.startWrite();
   _display.fillScreen(Theme::Bg);
-  _display.fillRoundRect(20, 90, 200, 120, 12, Theme::Panel);
+
+  // 918 Technologies // MERMAID boot identity.
+  _display.fillRoundRect(18, 72, 204, 154, 14, Theme::Panel);
+  _display.drawRoundRect(18, 72, 204, 154, 14, Theme::Border);
+
+  _display.fillRect(32, 88, 42, 18, Theme::Violet);
+  _display.fillRect(32, 106, 42, 10, Theme::Cyan);
+  _display.setTextColor(Theme::Text, Theme::Violet);
+  _display.drawCentreString("918", 53, 91, 2);
+
   _display.setTextColor(Theme::Text, Theme::Panel);
-  _display.drawCentreString("918 TECH//ONE", 120, 116, 2);
+  _display.drawString("TECHNOLOGIES", 86, 89, 1);
+  _display.setTextColor(Theme::Aqua, Theme::Panel);
+  _display.drawString("MERMAID", 86, 104, 2);
+
+  // Wave / siren motif.
+  for (int i = 0; i < 5; ++i) {
+    int y = 138 + i * 7;
+    _display.drawLine(34, y, 78, y - 3, (i & 1) ? Theme::Cyan : Theme::Aqua);
+    _display.drawLine(78, y - 3, 118, y + 2, (i & 1) ? Theme::Aqua : Theme::Cyan);
+    _display.drawLine(118, y + 2, 160, y - 2, (i & 1) ? Theme::Cyan : Theme::Aqua);
+    _display.drawLine(160, y - 2, 206, y, (i & 1) ? Theme::Aqua : Theme::Cyan);
+  }
+
   _display.setTextColor(Theme::Secondary, Theme::Panel);
-  _display.drawCentreString("Initializing display path", 120, 150, 1);
+  _display.drawCentreString("TECH//ONE COMMAND SURFACE", 120, 184, 1);
+  _display.setTextColor(Theme::Pearl, Theme::Panel);
+  _display.drawCentreString("INITIALIZING", 120, 202, 1);
   _display.endWrite();
 }
 
@@ -362,14 +385,24 @@ void UiController::handleTouch(const TouchPoint &tp) {
 void UiController::renderHeader() {
   _display.startWrite();
   _display.fillRect(0, 0, 240, 40, Theme::Elevated);
-  _display.fillRect(8, 6, 18, 10, Theme::Violet);
-  _display.fillRect(26, 6, 18, 10, Theme::Cyan);
-  _display.fillRect(8, 16, 36, 12, Theme::Amber);
+
+  // 918 Technologies mark.
+  _display.fillRect(6, 5, 34, 14, Theme::Violet);
+  _display.fillRect(6, 19, 34, 8, Theme::Cyan);
+  _display.setTextColor(Theme::Text, Theme::Violet);
+  _display.drawCentreString("918", 23, 7, 1);
+
   _display.setTextColor(Theme::Text, Theme::Elevated);
-  _display.drawString("918", 10, 6, 2);
-  _display.drawString("TECH//ONE", 56, 12, 2);
-  _display.drawRightString(modeLabel(_mode), 232, 10, 2);
-  _display.drawRightString("BAT 100%", 232, 22, 2);
+  _display.drawString("TECHNOLOGIES", 47, 6, 1);
+  _display.setTextColor(Theme::Aqua, Theme::Elevated);
+  _display.drawString("MERMAID", 47, 20, 1);
+
+  _display.setTextColor(Theme::Pearl, Theme::Elevated);
+  _display.drawRightString(modeLabel(_mode), 234, 5, 1);
+  _display.setTextColor(Theme::Secondary, Theme::Elevated);
+  _display.drawRightString("BAT 100%", 234, 20, 1);
+
+  _display.drawFastHLine(0, 38, 240, Theme::Cyan);
   _display.endWrite();
   _dirty.header = false;
 }
@@ -377,12 +410,17 @@ void UiController::renderHeader() {
 void UiController::renderNav() {
   _display.startWrite();
   _display.fillRect(0, 272, 240, 48, Theme::Panel);
+  _display.drawFastHLine(0, 272, 240, Theme::Border);
   const char *labels[] = {"CORE", "CODEX", "UART", "SCAN", "CAM"};
   for (int i = 0; i < 5; ++i) {
     int x = i * 48;
-    uint16_t c = (static_cast<int>(_page) == i) ? Theme::Cyan : Theme::Secondary;
-    _display.fillRect(x + 1, 273, 46, 46, Theme::Panel);
+    const bool active = (static_cast<int>(_page) == i);
+    uint16_t c = active ? Theme::Cyan : Theme::Secondary;
+    uint16_t bg = active ? Theme::Tide : Theme::Panel;
+    _display.fillRect(x + 1, 273, 46, 46, bg);
+    if (active) _display.fillRect(x + 6, 274, 36, 2, Theme::Aqua);
     drawTabIcon(_display, i, x + 14, 278, c);
+    _display.setTextColor(c, bg);
     _display.drawCentreString(labels[i], x + 24, 300, 1);
   }
   _display.endWrite();
@@ -392,8 +430,12 @@ void UiController::renderNav() {
 void UiController::renderCore() {
   _display.startWrite();
   _display.fillRect(0, 40, 240, 232, Theme::Bg);
-  _display.drawString("UNIFIED COMMAND SURFACE", 16, 48, 1);
-  _display.drawString("Systems alive.", 16, 66, 1);
+  _display.setTextColor(Theme::Aqua, Theme::Bg);
+  _display.drawString("918 TECHNOLOGIES // MERMAID", 16, 48, 1);
+  _display.setTextColor(Theme::Text, Theme::Bg);
+  _display.drawString("UNIFIED COMMAND SURFACE", 16, 64, 1);
+  _display.setTextColor(Theme::Secondary, Theme::Bg);
+  _display.drawString("Systems alive.", 16, 80, 1);
   drawFlowGraph(_display, 16, 106, 208, 84, Theme::Cyan, Theme::Violet, Theme::Aqua);
   const char *labels[] = {"S3 Vision", "Flipper UART", "Marauder Safe Mode", "Codex Gateway"};
   const char *values[] = {(_s3 == LinkState::Online || _s3 == LinkState::Ready) ? "ONLINE" : "CONNECTING",
@@ -418,7 +460,10 @@ void UiController::renderCodex() {
     renderCalibration();
     return;
   }
-  _display.drawString("PHYSICAL APPROVAL REQUIRED", 16, 48, 1);
+  _display.setTextColor(Theme::Aqua, Theme::Bg);
+  _display.drawString("918 MERMAID // CODEX", 16, 48, 1);
+  _display.setTextColor(Theme::Text, Theme::Bg);
+  _display.drawString("PHYSICAL APPROVAL REQUIRED", 16, 62, 1);
   _display.fillRoundRect(12, 76, 216, 114, 8, Theme::Panel);
   _display.drawString("Summary", 20, 84, 1);
   _display.drawString(_proposal.summary, 20, 98, 1);
