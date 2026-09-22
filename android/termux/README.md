@@ -76,3 +76,28 @@ MERMAID_HELLO role=CYD hw=ESP32-WROOM-32E-N4 proto=MVP1
 ## Safety / fail-closed rules
 
 The Android Codex path must not use full-chip erase, `esptool --force`, eFuse writes, arbitrary partition replacement, or claim hardware acceptance from compilation alone. USB permission remains user-controlled by Android/Chrome.
+
+
+## Preferred Android physical flash path
+
+For classic ESP32 CYD boards behind CP2102, CH340/CH9102, or FTDI USB-UART bridges, use the native Termux USB path instead of Chrome Web Serial.
+
+Requirements:
+
+- `termux-api` and `libusb` Termux packages
+- the separate **Termux:API** Android app from F-Droid
+- `nrflash==1.2.0`
+
+After downloading the signed/hashed Mermaid factory image:
+
+```bash
+bash android/termux/cyd-flash-termux.sh
+```
+
+The script verifies the image SHA-256, probes the attached ESP32, writes the merged image at `0x0`, and requests device verification without doing a full-chip erase.
+
+Success sentinel:
+
+```text
+MERMAID_CYD_TERMUX_FLASH_OK
+```
