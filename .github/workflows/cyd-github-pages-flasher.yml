@@ -1,1 +1,102 @@
-name: Mermaid CYD GitHub Pages Flasher\n\non:\n  push:\n    branches:\n      - feat/cyd-android-codex-cli-automation\n    paths:\n      - "firmware/e32r28t/**"\n      - "android/termux/cyd-build-export.sh"\n      - "github-pages/**"\n      - ".github/workflows/cyd-github-pages-flasher.yml"\n  workflow_dispatch:\n\npermissions:\n  contents: read\n  pages: write\n  id-token: write\n\nconcurrency:\n  group: "mermaid-cyd-pages"\n  cancel-in-progress: false\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v6\n\n      - name: Setup Python\n        uses: actions/setup-python@v6\n        with:\n          python-version: "3.11"\n\n      - name: Install build tools\n        run: python -m pip install "platformio==6.2.0" "esptool==4.12.0" "pyserial==3.5"\n\n      - name: Build merged Mermaid CYD image\n        env:\n          MERMAID_CI_OUTDIR: "${{ github.workspace }}/dist/cyd-pages"\n        run: bash android/termux/cyd-build-export.sh\n\n      - name: Verify firmware identity and UI target\n        run: |\n          grep -F "MERMAID_HELLO role=CYD hw=ESP32-WROOM-32E-N4 proto=MVP1" firmware/e32r28t/src/main.cpp\n          grep -F "MERMAID" firmware/e32r28t/src/ui/UiController.cpp\n          grep -F "TOUCH_CS 33" firmware/e32r28t/User_Setup.h\n\n      - name: Assemble GitHub Pages site\n        shell: bash\n        run: |\n          set -euo pipefail\n          rm -rf _site\n          mkdir -p _site/cyd\n          cp github-pages/index.html _site/index.html\n          cp github-pages/index.html _site/cyd/index.html\n          cp dist/cyd-pages/cyd-wroom32e-n4-mermaid.factory.bin _site/mermaid-cyd.factory.bin\n          cp dist/cyd-pages/cyd-wroom32e-n4-mermaid.factory.bin _site/cyd/mermaid-cyd.factory.bin\n          SHA="$(sha256sum _site/mermaid-cyd.factory.bin | awk '{print $1}')"\n          SIZE="$(wc -c < _site/mermaid-cyd.factory.bin | tr -d ' ')"\n          cat > _site/manifest.json <<EOF\n          {\n            "name": "918 Mermaid CYD",\n            "version": "ui-r2-${{ github.sha }}",\n            "new_install_prompt_erase": true,\n            "builds": [\n              {\n                "chipFamily": "ESP32",\n                "parts": [\n                  { "path": "mermaid-cyd.factory.bin", "offset": 0 }\n                ]\n              }\n            ]\n          }\n          EOF\n          cp _site/manifest.json _site/cyd/manifest.json\n          cat > _site/build.json <<EOF\n          {"source_sha":"${{ github.sha }}","sha256":"$SHA","bytes":$SIZE,"hardware":"ESP32-WROOM-32E-N4","flash":"4MB","display":"ILI9341 240x320","touch":"XPT2046 resistive"}\n          EOF\n          cp _site/build.json _site/cyd/build.json\n          touch _site/.nojekyll\n          python -m json.tool _site/manifest.json >/dev/null\n          python -m json.tool _site/build.json >/dev/null\n\n      - name: Configure Pages\n        uses: actions/configure-pages@v5\n\n      - name: Upload Pages artifact\n        uses: actions/upload-pages-artifact@v4\n        with:\n          path: "_site"\n\n  deploy:\n    environment:\n      name: github-pages\n      url: "${{ steps.deployment.outputs.page_url }}"\n    runs-on: ubuntu-latest\n    needs: build\n    steps:\n      - name: Deploy to GitHub Pages\n        id: deployment\n        uses: actions/deploy-pages@v4
+name: Mermaid CYD GitHub Pages Flasher
+
+on:
+  push:
+    branches:
+      - feat/cyd-android-codex-cli-automation
+    paths:
+      - "firmware/e32r28t/**"
+      - "android/termux/cyd-build-export.sh"
+      - "github-pages/**"
+      - ".github/workflows/cyd-github-pages-flasher.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "mermaid-cyd-pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: python -m pip install "platformio==6.2.0" "esptool==4.12.0" "pyserial==3.5"
+
+      - name: Build merged Mermaid CYD image
+        env:
+          MERMAID_CI_OUTDIR: "${{ github.workspace }}/dist/cyd-pages"
+        run: bash android/termux/cyd-build-export.sh
+
+      - name: Verify firmware identity and UI target
+        run: |
+          grep -F "MERMAID_HELLO role=CYD hw=ESP32-WROOM-32E-N4 proto=MVP1" firmware/e32r28t/src/main.cpp
+          grep -F "MERMAID" firmware/e32r28t/src/ui/UiController.cpp
+          grep -F "TOUCH_CS 33" firmware/e32r28t/User_Setup.h
+
+      - name: Assemble GitHub Pages site
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _site
+          mkdir -p _site/cyd
+          cp github-pages/index.html _site/index.html
+          cp github-pages/index.html _site/cyd/index.html
+          cp dist/cyd-pages/cyd-wroom32e-n4-mermaid.factory.bin _site/mermaid-cyd.factory.bin
+          cp dist/cyd-pages/cyd-wroom32e-n4-mermaid.factory.bin _site/cyd/mermaid-cyd.factory.bin
+          SHA="$(sha256sum _site/mermaid-cyd.factory.bin | awk '{print $1}')"
+          SIZE="$(wc -c < _site/mermaid-cyd.factory.bin | tr -d ' ')"
+          cat > _site/manifest.json <<EOF
+          {
+            "name": "918 Mermaid CYD",
+            "version": "ui-r2-${{ github.sha }}",
+            "new_install_prompt_erase": true,
+            "builds": [
+              {
+                "chipFamily": "ESP32",
+                "parts": [
+                  { "path": "mermaid-cyd.factory.bin", "offset": 0 }
+                ]
+              }
+            ]
+          }
+          EOF
+          cp _site/manifest.json _site/cyd/manifest.json
+          cat > _site/build.json <<EOF
+          {"source_sha":"${{ github.sha }}","sha256":"$SHA","bytes":$SIZE,"hardware":"ESP32-WROOM-32E-N4","flash":"4MB","display":"ILI9341 240x320","touch":"XPT2046 resistive"}
+          EOF
+          cp _site/build.json _site/cyd/build.json
+          touch _site/.nojekyll
+          python -m json.tool _site/manifest.json >/dev/null
+          python -m json.tool _site/build.json >/dev/null
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: "_site"
+
+  deploy:
+    environment:
+      name: github-pages
+      url: "${{ steps.deployment.outputs.page_url }}"
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
