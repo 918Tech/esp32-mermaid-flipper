@@ -70,7 +70,7 @@ void UiController::begin() {
   drawBootScreen();
   applyBacklight(true);
   _mode = cal.valid ? UiMode::Ready : UiMode::CalibrationRequired;
-  _page = UiPage::Core;
+  _page = cal.valid ? UiPage::Core : UiPage::Codex;
   invalidateAll();
 }
 
@@ -262,29 +262,60 @@ bool UiController::handleCamHit(int16_t x, int16_t y) {
   return false;
 }
 
-bool UiController::handleCalibrationHit(int16_t x, int16_t y) {
+bool UiController::handleCalibrationHit(int16_t rawX, int16_t rawY) {
   if (_mode != UiMode::CalibrationRequired) return false;
-  const int16_t points[4][2] = {{24, 60}, {216, 60}, {216, 228}, {24, 228}};
-  const int16_t px = points[_calibrationStep][0];
-  const int16_t py = points[_calibrationStep][1];
-  if (abs(x - px) > 24 || abs(y - py) > 24) return false;
-  _calSamples[_calibrationStep] = {x, y, true};
+  if (rawX <= 0 || rawY <= 0 || _calibrationStep >= 4) return false;
+
+  _calSamples[_calibrationStep] = {rawX, rawY, true};
   _calibrationStep++;
+
   if (_calibrationStep >= 4) {
+    // Targets are TL, TR, BR, BL. Infer whether raw axes are swapped.
+    const int32_t horizontalRawX =
+        abs(_calSamples[1].x - _calSamples[0].x) +
+        abs(_calSamples[2].x - _calSamples[3].x);
+    const int32_t horizontalRawY =
+        abs(_calSamples[1].y - _calSamples[0].y) +
+        abs(_calSamples[2].y - _calSamples[3].y);
+
     TouchCalibration cal{};
-    cal.minX = min(min(_calSamples[0].x, _calSamples[3].x), min(_calSamples[1].x, _calSamples[2].x));
-    cal.maxX = max(max(_calSamples[0].x, _calSamples[3].x), max(_calSamples[1].x, _calSamples[2].x));
-    cal.minY = min(min(_calSamples[0].y, _calSamples[1].y), min(_calSamples[2].y, _calSamples[3].y));
-    cal.maxY = max(max(_calSamples[0].y, _calSamples[1].y), max(_calSamples[2].y, _calSamples[3].y));
-    cal.swapXY = false;
-    cal.invX = false;
-    cal.invY = false;
-    cal.valid = true;
+    cal.swapXY = horizontalRawY > horizontalRawX;
+
+    int16_t sx[4];
+    int16_t sy[4];
+    for (int i = 0; i < 4; ++i) {
+      sx[i] = cal.swapXY ? _calSamples[i].y : _calSamples[i].x;
+      sy[i] = cal.swapXY ? _calSamples[i].x : _calSamples[i].y;
+    }
+
+    const int16_t left = (sx[0] + sx[3]) / 2;
+    const int16_t right = (sx[1] + sx[2]) / 2;
+    const int16_t top = (sy[0] + sy[1]) / 2;
+    const int16_t bottom = (sy[2] + sy[3]) / 2;
+
+    cal.invX = left > right;
+    cal.invY = top > bottom;
+
+    cal.minX = min(min(sx[0], sx[1]), min(sx[2], sx[3]));
+    cal.maxX = max(max(sx[0], sx[1]), max(sx[2], sx[3]));
+    cal.minY = min(min(sy[0], sy[1]), min(sy[2], sy[3]));
+    cal.maxY = max(max(sy[0], sy[1]), max(sy[2], sy[3]));
+    cal.valid = (cal.maxX - cal.minX > 500) && (cal.maxY - cal.minY > 500);
+
+    if (!cal.valid) {
+      _calibrationStep = 0;
+      _dirty.content = true;
+      Serial.println("MERMAID_TOUCH_CAL_RETRY");
+      return true;
+    }
+
     _prefs.saveCalibration(cal);
     _touch.setCalibration(cal);
     _touch.forceRawMode(false);
     setMode(UiMode::Ready);
-    _dirty.content = _dirty.header = _dirty.overlay = true;
+    setPage(UiPage::Core);
+    _dirty.content = _dirty.header = _dirty.navigation = _dirty.overlay = true;
+    Serial.println("MERMAID_TOUCH_CAL_OK");
   } else {
     _dirty.content = true;
   }
@@ -350,8 +381,10 @@ bool UiController::codexButtonHit(int16_t x, int16_t y, bool &approve, bool &den
 
 void UiController::handleRelease(int16_t x, int16_t y) {
   if (_touchGestureConsumed || !(_touchStartedInside)) return;
+  if (_mode == UiMode::CalibrationRequired) {
+    if (handleCalibrationHit(_touchLastRawX, _touchLastRawY)) { _touchGestureConsumed = true; return; }
+  }
   if (handleSettingsHit(x, y)) { _touchGestureConsumed = true; return; }
-  if (handleCalibrationHit(x, y)) { _touchGestureConsumed = true; return; }
   if (handleCoreHit(x, y)) { _touchGestureConsumed = true; return; }
   if (handleNavHit(x, y)) { _touchGestureConsumed = true; return; }
   if (handleCodexHit(x, y)) { _touchGestureConsumed = true; return; }
@@ -365,6 +398,8 @@ void UiController::handleTouch(const TouchPoint &tp) {
   _touchPressed = true;
   _touchLastX = x;
   _touchLastY = y;
+  _touchLastRawX = tp.rawX;
+  _touchLastRawY = tp.rawY;
   if (_touchPhase == TouchPhase::Idle || _touchPhase == TouchPhase::Released) {
     _touchPhase = TouchPhase::PressCandidate;
     _touchOriginX = x;
@@ -558,8 +593,12 @@ void UiController::renderOverlay() {
 
 void UiController::renderCalibration() {
   _display.fillRect(0, 40, 240, 232, Theme::Bg);
-  _display.drawString("TOUCH CALIBRATION", 16, 48, 1);
-  _display.drawString("Tap each target", 16, 64, 1);
+  _display.setTextColor(Theme::Aqua, Theme::Bg);
+  _display.drawString("918 MERMAID // TOUCH", 16, 48, 1);
+  _display.setTextColor(Theme::Text, Theme::Bg);
+  _display.drawString("TOUCH CALIBRATION", 16, 64, 1);
+  _display.setTextColor(Theme::Secondary, Theme::Bg);
+  _display.drawString("Tap each target", 16, 80, 1);
   const int16_t points[4][2] = {{24, 60}, {216, 60}, {216, 228}, {24, 228}};
   for (uint8_t i = 0; i < 4; ++i) {
     uint16_t c = (i == _calibrationStep) ? Theme::Amber : Theme::Secondary;
