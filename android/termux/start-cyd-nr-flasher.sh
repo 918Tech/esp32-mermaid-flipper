@@ -3,9 +3,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 IMAGE="$HOME/storage/downloads/918-mermaid/cyd-wroom32e-n4-mermaid.factory.bin"
 MANIFEST="$HOME/storage/downloads/918-mermaid/cyd-wroom32e-n4-mermaid.manifest.txt"
-PORT="\${MERMAID_CYD_NR_PORT:-9180}"
+PORT="${MERMAID_CYD_NR_PORT:-9180}"
 
-if [[ "\${PREFIX:-}" != *"com.termux"* ]]; then
+if [[ "${PREFIX:-}" != *"com.termux"* ]]; then
   echo "ERROR: Run this inside Termux on Android." >&2
   exit 2
 fi
