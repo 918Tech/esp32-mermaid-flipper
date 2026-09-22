@@ -51,7 +51,7 @@ fi
 echo "[2/3] Probing CYD / classic ESP32"
 echo "Connect the CYD with a data-capable USB-C cable."
 echo "If auto-reset does not enter download mode: hold BOOT, tap EN/RST, release EN/RST, then release BOOT."
-nrflash probe
+nrflash probe --chip esp32
 
 echo "[3/3] Flashing merged 4 MB Mermaid image at 0x0 and verifying"
 nrflash write --chip esp32 --offset 0x0 "$IMAGE" --verify
