@@ -1,4 +1,5 @@
 name: AD5X ESP32-S3 Camera Build
+# Build merged nrflash image for the AD5X watcher camera.
 
 on:
   push:
