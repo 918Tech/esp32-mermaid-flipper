@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090d12">
+<title>918 Marauder • WROOM-32E-N4 + Flipper Zero</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#090d12;--panel:#111820;--panel2:#0b1118;--border:#263545;
+  --text:#e6edf3;--muted:#95a3b2;--accent:#2f81f7;--good:#3fb950;
+  --warn:#d29922;--bad:#f85149;--cyan:#39c5cf
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#101b24 0,#090d12 45%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:780px;margin:auto;padding:18px}
+.brand{font:700 .82rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.07em;border:1px solid var(--border);background:#05080c;border-radius:12px;padding:11px 13px;color:#7ee787}
+h1{font-size:1.4rem;margin:14px 0 6px}
+h2{font-size:1rem;margin:0 0 12px}
+p{color:var(--muted);line-height:1.45}
+.card{background:rgba(17,24,32,.97);border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
+.tabs,.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button,select,input[type=file],input[type=text]{
+ width:100%;border:1px solid var(--border);border-radius:10px;background:var(--panel2);
+ color:var(--text);padding:12px;font:inherit
+}
+button{background:#1f6feb;border-color:#1f6feb;font-weight:700;cursor:pointer}
+button.secondary,.tabs button{background:var(--panel2);border-color:var(--border)}
+.tabs button.active{background:#1f6feb;border-color:#1f6feb}
+button.danger{background:#721c24;border-color:#a52a32}
+button:disabled{opacity:.45;cursor:not-allowed}
+label{display:block;color:var(--muted);font-size:.88rem;margin:9px 0 5px}
+.status{border:1px solid var(--border);background:var(--panel2);border-radius:10px;padding:10px 12px;font-size:.9rem}
+.ok{border-color:var(--good);color:#b8f5c1}
+.warn{border-color:var(--warn);color:#ffe08a}
+.bad{border-color:var(--bad);color:#ffb0aa}
+.addr,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.small{font-size:.82rem;color:var(--muted)}
+.hidden{display:none!important}
+.slot{border-top:1px solid var(--border);padding:9px 0}.slot:first-child{border-top:0}
+progress{width:100%;height:18px;margin-top:10px}
+pre{white-space:pre-wrap;word-break:break-word;background:#05080c;border:1px solid var(--border);border-radius:10px;padding:12px;min-height:145px;max-height:300px;overflow:auto}
+a{color:#79c0ff}
+.badge{display:inline-block;padding:3px 7px;border:1px solid var(--border);border-radius:999px;font-size:.75rem;color:var(--cyan);margin-right:5px}
+@media(max-width:620px){.tabs,.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">[ 918 MARAUDER PORTAL ] MULTI-DEVICE USB FLASH</div>
+  <h1>ESP32-WROOM-32E-N4 + Flipper Zero</h1>
+  <p>
+    Android/Chrome USB-C utility. WROOM-32E-N4 uses Espressif serial bootloader flashing.
+    Flipper Zero uses STM32 DFU for recovery, so its USB path is kept separate.
+  </p>
+
+  <div class="tabs">
+    <button id="espTab" class="active">ESP32-WROOM-32E-N4</button>
+    <button id="flipperTab">Flipper Zero</button>
+  </div>
+
+  <section id="espPanel">
+    <div class="card">
+      <h2>ESP32-WROOM-32E-N4</h2>
+      <p class="small"><span class="badge">ESP32</span><span class="badge">4 MB flash</span><span class="badge">No PSRAM</span></p>
+      <div id="espSupport" class="status">Checking Web Serial…</div>
+      <label>Baud</label>
+      <select id="baud">
+        <option value="115200">115200 — safest</option>
+        <option value="460800" selected>460800 — recommended</option>
+        <option value="921600">921600 — fastest</option>
+      </select>
+      <div class="grid" style="margin-top:10px">
+        <button id="espConnect">Connect WROOM-32E</button>
+        <button id="espReset" class="secondary" disabled>Hard reset</button>
+      </div>
+      <div id="espDevice" class="status" style="margin-top:10px">Not connected.</div>
+    </div>
+
+    <div class="card">
+      <h2>Firmware</h2>
+      <div class="tabs">
+        <button id="mergedMode" class="active">Merged / factory BIN</button>
+        <button id="splitMode">Split build</button>
+      </div>
+
+      <div id="mergedBox">
+        <label>Merged firmware .bin</label>
+        <input id="mergedFile" type="file" accept=".bin,application/octet-stream">
+        <label>Offset</label>
+        <input id="mergedOffset" type="text" value="0x0" class="addr">
+        <p class="small">Merged images are normally written at <code>0x0</code>.</p>
+      </div>
+
+      <div id="splitBox" class="hidden">
+        <div class="slot">
+          <label>Bootloader — <code>0x1000</code></label>
+          <input id="bootFile" type="file" accept=".bin,application/octet-stream">
+        </div>
+        <div class="slot">
+          <label>Partition table — <code>0x8000</code></label>
+          <input id="partFile" type="file" accept=".bin,application/octet-stream">
+        </div>
+        <div class="slot">
+          <label>boot_app0 — <code>0xE000</code> (optional)</label>
+          <input id="bootAppFile" type="file" accept=".bin,application/octet-stream">
+        </div>
+        <div class="slot">
+          <label>Application — <code>0x10000</code></label>
+          <input id="appFile" type="file" accept=".bin,application/octet-stream">
+        </div>
+      </div>
+
+      <label><input id="eraseFirst" type="checkbox"> Erase all flash before programming</label>
+      <div class="grid" style="margin-top:10px">
+        <button id="espFlash" disabled>Flash ESP32</button>
+        <button id="espErase" class="danger" disabled>Erase flash only</button>
+      </div>
+      <progress id="espProgress" max="100" value="0"></progress>
+      <div id="espProgressText" class="small">0%</div>
+    </div>
+
+    <div class="card">
+      <h2>ESP console</h2>
+      <pre id="espLog">Ready.</pre>
+      <button id="clearEsp" class="secondary">Clear console</button>
+    </div>
+  </section>
+
+  <section id="flipperPanel" class="hidden">
+    <div class="card">
+      <h2>Flipper Zero USB</h2>
+      <p class="small">
+        Normal firmware exposes USB serial as <code>0483:5740</code>. Recovery mode exposes the STM32
+        system bootloader as <code>0483:DF11</code>.
+      </p>
+      <div id="flipperSupport" class="status">Checking WebUSB / Web Serial…</div>
+      <div class="grid" style="margin-top:10px">
+        <button id="normalFlipper">Detect normal Flipper</button>
+        <button id="dfuFlipper">Detect DFU recovery</button>
+      </div>
+      <div id="flipperDevice" class="status" style="margin-top:10px">No Flipper selected.</div>
+    </div>
+
+    <div class="card">
+      <h2>DFU image check</h2>
+      <label>Flipper full firmware .dfu</label>
+      <input id="dfuFile" type="file" accept=".dfu,application/octet-stream">
+      <button id="validateDfu" class="secondary" style="margin-top:10px">Validate DfuSe file</button>
+      <div id="dfuInfo" class="status" style="margin-top:10px">No DFU image loaded.</div>
+      <p class="small">
+        This page validates the Flipper DfuSe container and USB recovery device before installation.
+        It deliberately does not send an unverified raw binary to STM32 flash.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Recovery mode</h2>
+      <p class="small">
+        Enter recovery: hold <strong>Left + Back</strong>, release Back, keep holding Left until the blue LED appears,
+        then connect USB-C. For a bricked unit, unplug USB and hold Back for 30 seconds before retrying.
+      </p>
+      <div class="grid">
+        <button id="openOfficial">Official Flipper update instructions</button>
+        <button id="openWebDfu" class="secondary">Open WebUSB DFU utility</button>
+      </div>
+      <p class="small">
+        Official Flipper firmware recovery is performed with a full <code>.dfu</code> package. qFlipper is the
+        official USB installer; the Flipper mobile app is the supported Android updater.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Flipper console</h2>
+      <pre id="flipperLog">Ready.</pre>
+      <button id="clearFlipper" class="secondary">Clear console</button>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>USB-C notes</h2>
+    <p class="small">
+      Use a USB-C cable that carries data, not charge-only. Chrome must own the USB permission prompt.
+      If Android has another app attached to the device, disconnect it there before connecting in this page.
+    </p>
+  </div>
+</main>
+
+<script type="module">
+import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.6.1/bundle.js";
+
+const $ = id => document.getElementById(id);
+let espTransport = null;
+let espLoader = null;
+let fwMode = "merged";
+
+const espLog = msg => {
+  $("espLog").textContent += ($("espLog").textContent ? "\n" : "") + String(msg);
+  $("espLog").scrollTop = $("espLog").scrollHeight;
+};
+const fLog = msg => {
+  $("flipperLog").textContent += ($("flipperLog").textContent ? "\n" : "") + String(msg);
+  $("flipperLog").scrollTop = $("flipperLog").scrollHeight;
+};
+const status = (el, text, kind="") => {
+  el.className = "status" + (kind ? " " + kind : "");
+  el.textContent = text;
+};
+const setEspProgress = n => {
+  n = Math.max(0, Math.min(100, Number(n)||0));
+  $("espProgress").value = n;
+  $("espProgressText").textContent = `${n.toFixed(0)}%`;
+};
+const parseAddr = s => {
+  const v=String(s).trim();
+  const n=v.toLowerCase().startsWith("0x")?parseInt(v,16):parseInt(v,10);
+  if(!Number.isFinite(n)||n<0) throw new Error("Invalid flash address: "+s);
+  return n;
+};
+const binString = bytes => {
+  let s="", chunk=0x2000;
+  for(let i=0;i<bytes.length;i+=chunk) s+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  return s;
+};
+async function entry(file,address){
+  if(!file) return null;
+  const b=new Uint8Array(await file.arrayBuffer());
+  espLog(`${file.name}: ${b.length.toLocaleString()} bytes @ 0x${address.toString(16).toUpperCase()}`);
+  return {data:binString(b),address};
+}
+const terminal=()=>({
+  clean(){},
+  writeLine(d){espLog(d)},
+  write(d){$("espLog").textContent+=String(d);$("espLog").scrollTop=$("espLog").scrollHeight}
+});
+function espBusy(on){
+  $("espConnect").disabled=on;
+  $("espFlash").disabled=on||!espLoader;
+  $("espErase").disabled=on||!espLoader;
+  $("espReset").disabled=on||!espLoader;
+}
+
+function checks(){
+  if(!window.isSecureContext){
+    status($("espSupport"),"Secure context required. Use HTTPS GitHub Pages or localhost.","bad");
+  } else if(!("serial" in navigator)){
+    status($("espSupport"),"Web Serial unavailable in this browser.","bad");
+  } else {
+    status($("espSupport"),"Web Serial ready.","ok");
+  }
+
+  if(!window.isSecureContext){
+    status($("flipperSupport"),"Secure context required.","bad");
+  } else if(!("usb" in navigator)){
+    status($("flipperSupport"),"WebUSB unavailable. Use current Chrome on Android.","bad");
+  } else {
+    const serial = ("serial" in navigator) ? " + Web Serial" : "";
+    status($("flipperSupport"),"WebUSB"+serial+" ready.","ok");
+  }
+}
+
+$("espTab").onclick=()=>{
+  $("espTab").classList.add("active");$("flipperTab").classList.remove("active");
+  $("espPanel").classList.remove("hidden");$("flipperPanel").classList.add("hidden");
+};
+$("flipperTab").onclick=()=>{
+  $("flipperTab").classList.add("active");$("espTab").classList.remove("active");
+  $("flipperPanel").classList.remove("hidden");$("espPanel").classList.add("hidden");
+};
+$("mergedMode").onclick=()=>{
+  fwMode="merged";$("mergedMode").classList.add("active");$("splitMode").classList.remove("active");
+  $("mergedBox").classList.remove("hidden");$("splitBox").classList.add("hidden");
+};
+$("splitMode").onclick=()=>{
+  fwMode="split";$("splitMode").classList.add("active");$("mergedMode").classList.remove("active");
+  $("splitBox").classList.remove("hidden");$("mergedBox").classList.add("hidden");
+};
+$("clearEsp").onclick=()=>$("espLog").textContent="";
+$("clearFlipper").onclick=()=>$("flipperLog").textContent="";
+
+$("espConnect").onclick=async()=>{
+  if(!("serial" in navigator)) return;
+  espBusy(true);setEspProgress(0);
+  try{
+    const port=await navigator.serial.requestPort();
+    const info=port.getInfo?port.getInfo():{};
+    espLog(`USB VID=${info.usbVendorId?"0x"+info.usbVendorId.toString(16):"?"} PID=${info.usbProductId?"0x"+info.usbProductId.toString(16):"?"}`);
+    espTransport=new Transport(port,false);
+    espLoader=new ESPLoader({transport:espTransport,baudrate:Number($("baud").value),terminal:terminal(),debugLogging:false});
+    status($("espDevice"),"Connecting…","warn");
+    await espLoader.main("default_reset");
+    const chip=espLoader?.chip?.CHIP_NAME||"Unknown chip";
+    let flash="unknown";
+    try{ const kb=await espLoader.getFlashSize(); flash=kb>=1024?`${kb/1024} MB`:`${kb} KB`; }catch(_){}
+    const isClassic=/ESP32(?!-S|-C|-H|-P)/i.test(chip) || chip.toUpperCase()==="ESP32";
+    status($("espDevice"),`${chip} • flash ${flash}`,isClassic?"ok":"warn");
+    if(!isClassic) espLog("WARNING: expected classic ESP32 / WROOM-32E family.");
+    if(flash!=="4 MB") espLog(`NOTICE: N4 target expects 4 MB flash; detected ${flash}.`);
+  }catch(e){
+    espLoader=null;espTransport=null;
+    status($("espDevice"),"Connection failed: "+(e?.message||e),"bad");espLog("ERROR: "+(e?.message||e));
+  }finally{espBusy(false)}
+};
+
+$("espReset").onclick=async()=>{
+  if(!espLoader)return;
+  espBusy(true);
+  try{await espLoader.hardReset();espLog("Hard reset complete.");}
+  catch(e){espLog("RESET ERROR: "+(e?.message||e))}
+  finally{espBusy(false)}
+};
+
+$("espErase").onclick=async()=>{
+  if(!espLoader)return;
+  if(!confirm("Erase all 4 MB flash? Firmware, NVS, settings, and partitions will be deleted."))return;
+  espBusy(true);setEspProgress(0);
+  try{await espLoader.eraseFlash();setEspProgress(100);espLog("Erase complete.");}
+  catch(e){espLog("ERASE ERROR: "+(e?.message||e))}
+  finally{espBusy(false)}
+};
+
+$("espFlash").onclick=async()=>{
+  if(!espLoader)return;
+  espBusy(true);setEspProgress(0);
+  try{
+    const files=[];
+    if(fwMode==="merged"){
+      const f=$("mergedFile").files[0];
+      if(!f)throw new Error("Choose a merged .bin.");
+      files.push(await entry(f,parseAddr($("mergedOffset").value)));
+    }else{
+      for(const [f,a] of [
+        [$("bootFile").files[0],0x1000],
+        [$("partFile").files[0],0x8000],
+        [$("bootAppFile").files[0],0xE000],
+        [$("appFile").files[0],0x10000]
+      ]){
+        const x=await entry(f,a);if(x)files.push(x);
+      }
+      if(!files.length)throw new Error("Choose at least one split .bin.");
+    }
+    await espLoader.writeFlash({
+      fileArray:files,flashSize:"keep",flashMode:"keep",flashFreq:"keep",
+      eraseAll:$("eraseFirst").checked,compress:true,
+      reportProgress(i,w,t){
+        const p=t?w/t:0;
+        setEspProgress(((i+p)/files.length)*100);
+      }
+    });
+    setEspProgress(100);espLog("FLASH COMPLETE.");
+    await espLoader.hardReset();
+    status($("espDevice"),"Flash complete. Board reset.","ok");
+  }catch(e){
+    status($("espDevice"),"Flash failed: "+(e?.message||e),"bad");espLog("FLASH ERROR: "+(e?.message||e));
+  }finally{espBusy(false)}
+};
+
+$("normalFlipper").onclick=async()=>{
+  if(!("serial" in navigator)){
+    status($("flipperDevice"),"Web Serial unavailable.","bad");return;
+  }
+  try{
+    const port=await navigator.serial.requestPort({filters:[{usbVendorId:0x0483,usbProductId:0x5740}]});
+    const i=port.getInfo?port.getInfo():{};
+    status($("flipperDevice"),`Normal Flipper selected • VID 0x${(i.usbVendorId||0).toString(16)} PID 0x${(i.usbProductId||0).toString(16)}`,"ok");
+    fLog("Normal Flipper USB serial detected.");
+  }catch(e){fLog("NORMAL DETECT: "+(e?.message||e))}
+};
+
+$("dfuFlipper").onclick=async()=>{
+  if(!("usb" in navigator)){
+    status($("flipperDevice"),"WebUSB unavailable.","bad");return;
+  }
+  try{
+    const d=await navigator.usb.requestDevice({filters:[{vendorId:0x0483,productId:0xdf11}]});
+    await d.open();
+    if(!d.configuration) await d.selectConfiguration(1);
+    const cfg=d.configuration;
+    const ifaces=cfg?.interfaces?.length??0;
+    status($("flipperDevice"),`STM32 DFU selected • 0483:DF11 • ${ifaces} interface(s)`,"ok");
+    fLog(`DFU recovery device: ${d.productName||"STM32 BOOTLOADER"} / ${d.manufacturerName||"STMicroelectronics"}`);
+    fLog(`Serial: ${d.serialNumber||"(not exposed)"}`);
+    await d.close();
+  }catch(e){
+    status($("flipperDevice"),"DFU detection failed: "+(e?.message||e),"bad");fLog("DFU DETECT: "+(e?.message||e));
+  }
+};
+
+function ascii(u8,o,n){return String.fromCharCode(...u8.slice(o,o+n))}
+function u32(view,o){return view.getUint32(o,true)}
+function u16(view,o){return view.getUint16(o,true)}
+
+$("validateDfu").onclick=async()=>{
+  const f=$("dfuFile").files[0];
+  if(!f){status($("dfuInfo"),"Choose a .dfu file first.","warn");return}
+  try{
+    const buf=await f.arrayBuffer(), u=new Uint8Array(buf), v=new DataView(buf);
+    if(u.length<27)throw new Error("File too small for DfuSe.");
+    if(ascii(u,0,5)!=="DfuSe")throw new Error("Missing DfuSe prefix.");
+    const ver=u[5], declared=u32(v,6), targets=u[10];
+    let off=11,totalPayload=0,parsedTargets=0,elementCount=0;
+    for(let t=0;t<targets;t++){
+      if(off+274>u.length)throw new Error("Truncated target prefix.");
+      if(ascii(u,off,6)!=="Target")throw new Error(`Target ${t} signature missing.`);
+      const alt=u[off+6], named=u32(v,off+7);
+      const rawName=ascii(u,off+11,255).replace(/\0.*$/,"");
+      const targetSize=u32(v,off+266), elems=u32(v,off+270);
+      off+=274;
+      let targetPayload=0;
+      for(let e=0;e<elems;e++){
+        if(off+8>u.length)throw new Error("Truncated element header.");
+        const addr=u32(v,off), size=u32(v,off+4); off+=8;
+        if(off+size>u.length)throw new Error("Truncated element payload.");
+        targetPayload+=size; totalPayload+=size; elementCount++;
+        fLog(`Target ${t} alt=${alt} ${rawName||"(unnamed)"} element ${e}: 0x${addr.toString(16).toUpperCase()} + ${size} bytes`);
+        off+=size;
+      }
+      if(targetPayload!==targetSize)fLog(`NOTICE: target size field ${targetSize} vs parsed ${targetPayload}.`);
+      parsedTargets++;
+    }
+    let suffix="";
+    if(u.length>=16 && ascii(u,u.length-8,3)==="UFD"){
+      const s=u.length-16;
+      suffix=` • VID 0x${u16(v,s+4).toString(16).padStart(4,"0")} PID 0x${u16(v,s+2).toString(16).padStart(4,"0")}`;
+    }
+    status($("dfuInfo"),`${f.name} • DfuSe v${ver} • ${parsedTargets} target(s) • ${elementCount} element(s) • ${totalPayload.toLocaleString()} payload bytes${suffix}`,"ok");
+    fLog(`Validated ${f.name}; declared image size=${declared}, file size=${u.length}.`);
+  }catch(e){
+    status($("dfuInfo"),"Invalid/unsupported DFU: "+(e?.message||e),"bad");fLog("DFU VALIDATION: "+(e?.message||e));
+  }
+};
+
+$("openOfficial").onclick=()=>window.open("https://docs.flipper.net/zero/basics/firmware-update/firmware-recovery","_blank","noopener");
+$("openWebDfu").onclick=()=>window.open("https://devanlai.github.io/webdfu/dfu-util/","_blank","noopener");
+
+checks();
+</script>
+</body>
+</html>
