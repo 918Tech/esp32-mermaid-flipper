@@ -13,6 +13,19 @@ HardwareSerial decisionSerial(1);
 char lastDecision[32] = "idle";
 char lastProposalId[32] = "none";
 char lastDecisionReason[48] = "none";
+uint32_t nextIdentityMs = 0;
+}
+
+static void emitIdentity() {
+  const uint32_t now = millis();
+  if (static_cast<int32_t>(now - Network::nextIdentityMs) < 0) return;
+  Network::nextIdentityMs = now + 2000;
+  Serial.print("MERMAID_HELLO role=S3_N16R8 hw=ESP32-S3-N16R8 proto=MVP1 flash=");
+  Serial.print(ESP.getFlashChipSize());
+  Serial.print(" psram=");
+  Serial.print(ESP.getPsramSize());
+  Serial.print(" camera=");
+  Serial.println(Network::cameraReady ? "ready" : "fault");
 }
 
 static void releaseFrame() {
@@ -175,10 +188,12 @@ void setup() {
   initDecisionLink();
   Network::cameraReady = initCamera();
   startServer();
+  emitIdentity();
 }
 
 void loop() {
   pollDecisionLink();
   Network::server.handleClient();
+  emitIdentity();
   delay(2);
 }

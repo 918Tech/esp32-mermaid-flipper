@@ -1,5 +1,8 @@
 .env
 .env.local
+.venv-mermaid/
+.ufbt/
+firmware/s3cam/src/wifi_credentials.h
 .pio/
 dist/
 node_modules/
@@ -8,6 +11,7 @@ node_modules/
 *.map
 *.uf2
 *.hex
+*.fap
 *.log
 *.sqlite
 *.sqlite-wal
