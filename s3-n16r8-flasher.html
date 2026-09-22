@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101418">
+<title>918 Marauder ESP32-S3 Flasher</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --bg:#0d1117;--panel:#151b23;--panel2:#0f141b;--border:#2b3440;
+    --text:#e6edf3;--muted:#9da7b3;--accent:#58a6ff;--good:#3fb950;
+    --warn:#d29922;--bad:#f85149;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  main{max-width:760px;margin:auto;padding:18px}
+  h1{font-size:1.45rem;margin:0 0 6px}
+  h2{font-size:1rem;margin:0 0 12px}
+  p{color:var(--muted);line-height:1.45}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button,select,input[type="text"],input[type="number"],input[type="file"]{
+    width:100%;border:1px solid var(--border);border-radius:10px;background:var(--panel2);
+    color:var(--text);padding:12px;font:inherit
+  }
+  button{background:#1f6feb;border-color:#1f6feb;font-weight:700;cursor:pointer}
+  button.secondary{background:var(--panel2);border-color:var(--border)}
+  button.danger{background:#7d1d1d;border-color:#a22}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  label{display:block;color:var(--muted);font-size:.88rem;margin:8px 0 5px}
+  .status{border-radius:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);font-size:.92rem}
+  .ok{border-color:var(--good);color:#b8f5c1}
+  .warn{border-color:var(--warn);color:#ffe08a}
+  .bad{border-color:var(--bad);color:#ffb0aa}
+  .mode{display:flex;gap:8px;margin-bottom:12px}
+  .mode button{background:var(--panel2);border-color:var(--border)}
+  .mode button.active{background:#1f6feb;border-color:#1f6feb}
+  .slot{padding:10px 0;border-top:1px solid var(--border)}
+  .slot:first-child{border-top:0}
+  .addr{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  progress{width:100%;height:18px;margin-top:10px}
+  pre{white-space:pre-wrap;word-break:break-word;background:#070a0e;border:1px solid var(--border);
+      border-radius:10px;padding:12px;min-height:150px;max-height:310px;overflow:auto;color:#c9d1d9}
+  .small{font-size:.82rem;color:var(--muted)}
+  .hidden{display:none!important}
+  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+              border:1px solid #2b3440;background:#070a0e;border-radius:12px;
+              padding:10px 12px;margin-bottom:12px;color:#7ee787">
+    [ 918 MARAUDER PORTAL ] USB FLASH MODE
+  </div>
+  <h1>918 Marauder • ESP32-S3 N16R8 CAM Flasher</h1>
+  <p>Marauder portal flasher for Android/Termux over USB-C ↔ USB-C. Target: ESP32-S3 N16R8 CAM.</p>
+
+  <section class="card">
+    <h2>1. Connect</h2>
+    <div id="support" class="status">Checking browser USB support…</div>
+    <label for="baud">Flash baud rate</label>
+    <select id="baud">
+      <option value="115200">115200 — safest</option>
+      <option value="460800" selected>460800 — recommended</option>
+      <option value="921600">921600 — fastest</option>
+    </select>
+    <div class="grid" style="margin-top:10px">
+      <button id="connect">Connect ESP32-S3</button>
+      <button id="reset" class="secondary" disabled>Hard reset</button>
+    </div>
+    <div id="device" class="status" style="margin-top:10px">Not connected.</div>
+  </section>
+
+  <section class="card">
+    <h2>2. Firmware</h2>
+    <div class="mode">
+      <button id="modeMerged" class="active" type="button">Merged / factory BIN</button>
+      <button id="modeMulti" type="button">4-file build</button>
+    </div>
+
+    <div id="mergedPanel">
+      <label for="mergedFile">Merged firmware .bin</label>
+      <input id="mergedFile" type="file" accept=".bin,application/octet-stream">
+      <label for="mergedOffset">Flash offset</label>
+      <input id="mergedOffset" type="text" value="0x0" class="addr" inputmode="text">
+      <p class="small">Use <span class="addr">0x0</span> for a merged/factory ESP32-S3 image.</p>
+    </div>
+
+    <div id="multiPanel" class="hidden">
+      <div class="slot">
+        <label>Bootloader — <span class="addr">0x0000</span></label>
+        <input id="bootloaderFile" type="file" accept=".bin,application/octet-stream">
+      </div>
+      <div class="slot">
+        <label>Partition table — <span class="addr">0x8000</span></label>
+        <input id="partitionsFile" type="file" accept=".bin,application/octet-stream">
+      </div>
+      <div class="slot">
+        <label>boot_app0 — <span class="addr">0xE000</span></label>
+        <input id="bootAppFile" type="file" accept=".bin,application/octet-stream">
+      </div>
+      <div class="slot">
+        <label>Application / firmware — <span class="addr">0x10000</span></label>
+        <input id="appFile" type="file" accept=".bin,application/octet-stream">
+      </div>
+      <p class="small">These are the common Arduino ESP32-S3 offsets. If your build reports different offsets, use a merged image instead.</p>
+    </div>
+
+    <label style="margin-top:14px">
+      <input id="eraseFirst" type="checkbox"> Erase entire flash before programming
+    </label>
+
+    <div class="grid" style="margin-top:12px">
+      <button id="flash" disabled>Flash firmware</button>
+      <button id="erase" class="danger" disabled>Erase flash only</button>
+    </div>
+    <progress id="progress" max="100" value="0"></progress>
+    <div id="progressText" class="small">0%</div>
+  </section>
+
+  <section class="card">
+    <h2>Console</h2>
+    <pre id="log">Ready.</pre>
+    <button id="clearLog" class="secondary">Clear console</button>
+  </section>
+
+  <section class="card">
+    <h2>Android notes</h2>
+    <p class="small">
+      Open this page in current Google Chrome from a localhost Termux server. The browser, not Termux,
+      owns the USB permission prompt. If connection fails, hold the board's BOOT button while tapping RESET,
+      release RESET, then release BOOT and press Connect again. Close the browser tab to release the USB device.
+    </p>
+  </section>
+</main>
+
+<script type="module">
+import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.6.1/bundle.js";
+
+const $ = (id) => document.getElementById(id);
+const support = $("support");
+const connectBtn = $("connect");
+const resetBtn = $("reset");
+const flashBtn = $("flash");
+const eraseBtn = $("erase");
+const deviceBox = $("device");
+const logEl = $("log");
+const progress = $("progress");
+const progressText = $("progressText");
+
+let transport = null;
+let loader = null;
+let mode = "merged";
+
+function log(msg) {
+  const line = typeof msg === "string" ? msg : String(msg);
+  logEl.textContent += (logEl.textContent ? "\n" : "") + line;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function setDevice(text, kind = "") {
+  deviceBox.className = "status" + (kind ? " " + kind : "");
+  deviceBox.textContent = text;
+}
+
+function setProgress(pct) {
+  const n = Math.max(0, Math.min(100, Number(pct) || 0));
+  progress.value = n;
+  progressText.textContent = `${n.toFixed(0)}%`;
+}
+
+function parseAddress(s) {
+  const v = String(s).trim();
+  const n = v.toLowerCase().startsWith("0x") ? parseInt(v, 16) : parseInt(v, 10);
+  if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid flash address: ${s}`);
+  return n;
+}
+
+function bytesToBinaryString(bytes) {
+  const CHUNK = 0x2000;
+  let out = "";
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    out += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return out;
+}
+
+async function fileToEntry(file, address) {
+  if (!file) return null;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  log(`${file.name}: ${bytes.length.toLocaleString()} bytes @ 0x${address.toString(16).toUpperCase()}`);
+  return { data: bytesToBinaryString(bytes), address };
+}
+
+function terminal() {
+  return {
+    clean() {},
+    writeLine(data) { log(data); },
+    write(data) {
+      const s = String(data);
+      logEl.textContent += s;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+  };
+}
+
+function busy(on) {
+  connectBtn.disabled = on;
+  flashBtn.disabled = on || !loader;
+  eraseBtn.disabled = on || !loader;
+  resetBtn.disabled = on || !loader;
+}
+
+function browserCheck() {
+  if (!window.isSecureContext) {
+    support.className = "status bad";
+    support.textContent = "Not a secure context. Serve this file from http://127.0.0.1 or https://.";
+    connectBtn.disabled = true;
+    return false;
+  }
+  if (!("serial" in navigator)) {
+    support.className = "status bad";
+    support.textContent = "Web Serial is unavailable. Update Google Chrome on Android and open this page in Chrome.";
+    connectBtn.disabled = true;
+    return false;
+  }
+  support.className = "status ok";
+  support.textContent = "Web Serial ready.";
+  return true;
+}
+
+$("modeMerged").addEventListener("click", () => {
+  mode = "merged";
+  $("modeMerged").classList.add("active");
+  $("modeMulti").classList.remove("active");
+  $("mergedPanel").classList.remove("hidden");
+  $("multiPanel").classList.add("hidden");
+});
+
+$("modeMulti").addEventListener("click", () => {
+  mode = "multi";
+  $("modeMulti").classList.add("active");
+  $("modeMerged").classList.remove("active");
+  $("multiPanel").classList.remove("hidden");
+  $("mergedPanel").classList.add("hidden");
+});
+
+$("clearLog").addEventListener("click", () => {
+  logEl.textContent = "";
+});
+
+connectBtn.addEventListener("click", async () => {
+  if (!browserCheck()) return;
+  busy(true);
+  setProgress(0);
+  try {
+    log("Requesting USB serial device...");
+    const port = await navigator.serial.requestPort();
+    const info = typeof port.getInfo === "function" ? port.getInfo() : {};
+    log(`USB VID: ${info.usbVendorId ? "0x" + info.usbVendorId.toString(16) : "?"}`);
+    log(`USB PID: ${info.usbProductId ? "0x" + info.usbProductId.toString(16) : "?"}`);
+
+    transport = new Transport(port, false);
+    const baudrate = Number($("baud").value);
+    loader = new ESPLoader({
+      transport,
+      baudrate,
+      terminal: terminal(),
+      debugLogging: false
+    });
+
+    setDevice("Connecting and detecting chip…", "warn");
+    await loader.main("default_reset");
+
+    const chipName = loader?.chip?.CHIP_NAME || "Unknown Espressif chip";
+    let flashText = "unknown";
+    try {
+      const kb = await loader.getFlashSize();
+      flashText = kb >= 1024 ? `${kb / 1024} MB` : `${kb} KB`;
+    } catch (_) {}
+
+    let featuresText = "";
+    try {
+      const features = await loader.chip.getChipFeatures(loader);
+      if (Array.isArray(features)) featuresText = features.join(", ");
+    } catch (_) {}
+
+    const isS3 = String(chipName).toUpperCase().includes("ESP32-S3");
+    setDevice(
+      `${chipName} • flash ${flashText}${featuresText ? " • " + featuresText : ""}`,
+      isS3 ? "ok" : "warn"
+    );
+    if (!isS3) log("WARNING: Connected chip does not identify as ESP32-S3.");
+    log(`Connected: ${chipName}`);
+  } catch (err) {
+    loader = null;
+    transport = null;
+    const msg = err instanceof Error ? err.message : String(err);
+    setDevice(`Connection failed: ${msg}`, "bad");
+    log(`ERROR: ${msg}`);
+  } finally {
+    busy(false);
+  }
+});
+
+resetBtn.addEventListener("click", async () => {
+  if (!loader) return;
+  busy(true);
+  try {
+    log("Hard reset...");
+    await loader.hardReset();
+    log("Reset complete.");
+  } catch (err) {
+    log(`RESET ERROR: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    busy(false);
+  }
+});
+
+eraseBtn.addEventListener("click", async () => {
+  if (!loader) return;
+  if (!confirm("Erase the entire ESP32 flash? This deletes firmware, partitions, NVS, and stored settings.")) return;
+  busy(true);
+  setProgress(0);
+  try {
+    log("Erasing entire flash...");
+    await loader.eraseFlash();
+    log("Erase complete.");
+    setProgress(100);
+  } catch (err) {
+    log(`ERASE ERROR: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    busy(false);
+  }
+});
+
+flashBtn.addEventListener("click", async () => {
+  if (!loader) return;
+  busy(true);
+  setProgress(0);
+
+  try {
+    const fileArray = [];
+
+    if (mode === "merged") {
+      const file = $("mergedFile").files[0];
+      if (!file) throw new Error("Choose a merged/factory .bin first.");
+      const address = parseAddress($("mergedOffset").value);
+      fileArray.push(await fileToEntry(file, address));
+    } else {
+      const slots = [
+        [$("bootloaderFile").files[0], 0x0000],
+        [$("partitionsFile").files[0], 0x8000],
+        [$("bootAppFile").files[0], 0xE000],
+        [$("appFile").files[0], 0x10000],
+      ];
+      for (const [file, address] of slots) {
+        const entry = await fileToEntry(file, address);
+        if (entry) fileArray.push(entry);
+      }
+      if (!fileArray.length) throw new Error("Choose at least one .bin file.");
+    }
+
+    log(`Starting flash: ${fileArray.length} image(s).`);
+    await loader.writeFlash({
+      fileArray,
+      flashSize: "keep",
+      flashMode: "keep",
+      flashFreq: "keep",
+      eraseAll: $("eraseFirst").checked,
+      compress: true,
+      reportProgress(fileIndex, written, total) {
+        const perFile = total ? written / total : 0;
+        const overall = ((fileIndex + perFile) / fileArray.length) * 100;
+        setProgress(overall);
+      }
+    });
+
+    setProgress(100);
+    log("FLASH COMPLETE.");
+    log("Hard resetting board...");
+    await loader.hardReset();
+    setDevice("Flash complete. Board reset.", "ok");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    setDevice(`Flash failed: ${msg}`, "bad");
+    log(`FLASH ERROR: ${msg}`);
+  } finally {
+    busy(false);
+  }
+});
+
+browserCheck();
+</script>
+</body>
+</html>
