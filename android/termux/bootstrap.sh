@@ -10,9 +10,11 @@ if [[ "${PREFIX:-}" != *"com.termux"* ]]; then
 fi
 
 pkg update -y
-pkg install -y git nodejs python clang make pkg-config openssh termux-tools
+pkg install -y git nodejs python python-pip clang make pkg-config openssh termux-tools
 
-python -m pip install --upgrade pip
+# Termux owns pip through the python-pip package. Never self-upgrade pip here:
+# "python -m pip install --upgrade pip" is intentionally prohibited on Termux.
+python -m pip --version
 python -m pip install "platformio==6.2.0" "esptool==4.12.0" "pyserial==3.5"
 
 if ! command -v codex >/dev/null 2>&1; then
