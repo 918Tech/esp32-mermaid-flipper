@@ -48,8 +48,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p firmware/releases/cyd
-          cp dist/cyd-android/cyd-wroom32e-n4-mermaid.factory.bin firmware/releases/cyd/mermaid-cyd.factory.bin
-          cp dist/cyd-android/cyd-wroom32e-n4-mermaid.manifest.txt firmware/releases/cyd/mermaid-cyd.manifest.txt
+          cp dist/cyd-android/cyd-wroom32e-n4-mermaid.factory.bin firmware/releases/cyd/cyd-wroom32e-n4-mermaid.factory.bin
+          cp dist/cyd-android/cyd-wroom32e-n4-mermaid.manifest.txt firmware/releases/cyd/cyd-wroom32e-n4-mermaid.manifest.txt
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -70,17 +70,3 @@ jobs:
             dist/cyd-android/cyd-wroom32e-n4-mermaid.factory.bin
             dist/cyd-android/cyd-wroom32e-n4-mermaid.manifest.txt
           if-no-files-found: error
-
-      - name: Publish Android download release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/cyd-android-codex-cli-automation'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release delete cyd-android-latest --cleanup-tag -y || true
-          gh release create cyd-android-latest \
-            dist/cyd-android/cyd-wroom32e-n4-mermaid.factory.bin \
-            dist/cyd-android/cyd-wroom32e-n4-mermaid.manifest.txt \
-            --target "$GITHUB_SHA" \
-            --title "CYD Android Latest" \
-            --notes "Automated 4 MB merged factory image for the 918 MERMAID CYD / ESP32-WROOM-32E-N4 native NR and GitHub flasher paths." \
-            --prerelease
