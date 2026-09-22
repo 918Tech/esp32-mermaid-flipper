@@ -17,16 +17,16 @@ TouchCalibration UiPreferences::loadCalibration() {
   c.swapXY = prefs.getBool("swap", false);
   c.invX = prefs.getBool("invx", false);
   c.invY = prefs.getBool("invy", false);
-  c.valid = (c.version == 1 && c.minX < c.maxX && c.minY < c.maxY);
+  c.valid = (c.version == 2 && c.minX < c.maxX && c.minY < c.maxY);
   TouchCalibration t = c; t.checksum = 0;
   c.valid = c.valid && c.checksum == checksum(t);
   return c;
 }
 void UiPreferences::saveCalibration(const TouchCalibration &cal) {
   TouchCalibration t = cal;
-  t.version = 1;
+  t.version = 2;
   t.checksum = 0;
-  prefs.putUShort("cver", 1);
+  prefs.putUShort("cver", 2);
   prefs.putShort("minx", cal.minX);
   prefs.putShort("maxx", cal.maxX);
   prefs.putShort("miny", cal.minY);
