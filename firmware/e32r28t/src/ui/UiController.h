@@ -51,7 +51,7 @@ class UiController {
   bool handleCoreHit(int16_t x, int16_t y);
   bool handleScanHit(int16_t x, int16_t y);
   bool handleCamHit(int16_t x, int16_t y);
-  bool handleCalibrationHit(int16_t x, int16_t y);
+  bool handleCalibrationHit(int16_t rawX, int16_t rawY);
   bool handleSettingsHit(int16_t x, int16_t y);
   void emitDecision(const char *decision, const char *reason);
   void dispatchApprovedCommand();
@@ -115,6 +115,8 @@ class UiController {
   int16_t _touchOriginY{-1};
   int16_t _touchLastX{-1};
   int16_t _touchLastY{-1};
+  int16_t _touchLastRawX{-1};
+  int16_t _touchLastRawY{-1};
   TouchPhase _touchPhase{TouchPhase::Idle};
   uint32_t _touchReleaseMs{0};
   uint32_t _touchDownMs{0};
