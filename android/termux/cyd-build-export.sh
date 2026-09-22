@@ -25,8 +25,31 @@ if [[ "${PREFIX:-}" == *"com.termux"* ]]; then
   }
 
   mkdir -p "$OUTDIR"
+  wait_download() {
+    local url="$1"
+    local dest="$2"
+    local label="$3"
+    local attempts=24
+    local delay=5
+
+    for ((i=1; i<=attempts; i++)); do
+      echo "$label (attempt $i/$attempts)"
+      if curl -fL --connect-timeout 15 --max-time 120 "$url" -o "$dest"; then
+        return 0
+      fi
+      rm -f "$dest"
+      if (( i < attempts )); then
+        echo "Release asset not available yet; waiting ${delay}s..."
+        sleep "$delay"
+      fi
+    done
+
+    echo "Timed out waiting for published CYD release asset: $url" >&2
+    return 1
+  }
+
   echo "[1/4] Downloading published CYD manifest"
-  curl -fL --retry 3 --retry-delay 2 "$RELEASE_BASE/$MANIFEST_NAME" -o "$MANIFEST"
+  wait_download "$RELEASE_BASE/$MANIFEST_NAME" "$MANIFEST" "Fetching manifest"
 
   EXPECTED_SHA="$(sed -n 's/^sha256=//p' "$MANIFEST" | head -n1)"
   [[ "$EXPECTED_SHA" =~ ^[0-9a-fA-F]{64}$ ]] || {
@@ -35,7 +58,7 @@ if [[ "${PREFIX:-}" == *"com.termux"* ]]; then
   }
 
   echo "[2/4] Downloading Linux-built CYD factory image"
-  curl -fL --retry 3 --retry-delay 2 "$RELEASE_BASE/$NAME" -o "$OUT"
+  wait_download "$RELEASE_BASE/$NAME" "$OUT" "Fetching factory image"
 
   echo "[3/4] Verifying SHA-256"
   ACTUAL_SHA="$(sha256sum "$OUT" | awk '{print $1}')"
