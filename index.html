@@ -3,397 +3,176 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101418">
-<title>918 Marauder ESP32-S3 Flasher</title>
+<meta name="theme-color" content="#071019">
+<title>918 MERMAID • M3rMa1dS1r3n</title>
+<meta name="description" content="918 MERMAID public project portal for the M3rMa1dS1r3n CYD, ESP32-S3-N16R8 and Flipper Zero integration.">
 <style>
-  :root{
-    color-scheme:dark;
-    --bg:#0d1117;--panel:#151b23;--panel2:#0f141b;--border:#2b3440;
-    --text:#e6edf3;--muted:#9da7b3;--accent:#58a6ff;--good:#3fb950;
-    --warn:#d29922;--bad:#f85149;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  main{max-width:760px;margin:auto;padding:18px}
-  h1{font-size:1.45rem;margin:0 0 6px}
-  h2{font-size:1rem;margin:0 0 12px}
-  p{color:var(--muted);line-height:1.45}
-  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  button,select,input[type="text"],input[type="number"],input[type="file"]{
-    width:100%;border:1px solid var(--border);border-radius:10px;background:var(--panel2);
-    color:var(--text);padding:12px;font:inherit
-  }
-  button{background:#1f6feb;border-color:#1f6feb;font-weight:700;cursor:pointer}
-  button.secondary{background:var(--panel2);border-color:var(--border)}
-  button.danger{background:#7d1d1d;border-color:#a22}
-  button:disabled{opacity:.45;cursor:not-allowed}
-  label{display:block;color:var(--muted);font-size:.88rem;margin:8px 0 5px}
-  .status{border-radius:10px;padding:10px 12px;background:var(--panel2);border:1px solid var(--border);font-size:.92rem}
-  .ok{border-color:var(--good);color:#b8f5c1}
-  .warn{border-color:var(--warn);color:#ffe08a}
-  .bad{border-color:var(--bad);color:#ffb0aa}
-  .mode{display:flex;gap:8px;margin-bottom:12px}
-  .mode button{background:var(--panel2);border-color:var(--border)}
-  .mode button.active{background:#1f6feb;border-color:#1f6feb}
-  .slot{padding:10px 0;border-top:1px solid var(--border)}
-  .slot:first-child{border-top:0}
-  .addr{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  progress{width:100%;height:18px;margin-top:10px}
-  pre{white-space:pre-wrap;word-break:break-word;background:#070a0e;border:1px solid var(--border);
-      border-radius:10px;padding:12px;min-height:150px;max-height:310px;overflow:auto;color:#c9d1d9}
-  .small{font-size:.82rem;color:var(--muted)}
-  .hidden{display:none!important}
-  @media(max-width:620px){.grid{grid-template-columns:1fr}}
+:root{color-scheme:dark;--bg:#050a0f;--panel:#0b131c;--panel2:#0f1b27;--line:#1d3448;--text:#e9f7ff;--muted:#91a8b7;--cyan:#45e6ff;--green:#5cf29b;--amber:#ffc857;--red:#ff6b6b}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 15% 0,#0d2534 0,transparent 34rem),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1120px,calc(100% - 28px));margin:auto}
+header{position:sticky;top:0;z-index:10;background:rgba(5,10,15,.82);backdrop-filter:blur(16px);border-bottom:1px solid rgba(69,230,255,.15)}
+nav{min-height:66px;display:flex;align-items:center;gap:14px}
+.brand{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:900;letter-spacing:.08em}
+.brand b{color:var(--cyan)}
+.spacer{flex:1}
+.navlink{color:var(--muted);font-size:.9rem}
+.hero{padding:70px 0 32px}
+.eyebrow{font:700 .78rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--green);letter-spacing:.14em}
+h1{font-size:clamp(2.35rem,7vw,5.2rem);line-height:.93;margin:12px 0 20px;letter-spacing:-.05em;max-width:900px}
+.lead{max-width:760px;color:var(--muted);font-size:1.08rem;line-height:1.65}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:28px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 17px;border:1px solid var(--line);border-radius:11px;background:var(--panel2);font-weight:800}
+.btn.primary{background:var(--cyan);border-color:var(--cyan);color:#00151a}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{grid-column:span 4;background:linear-gradient(180deg,rgba(15,27,39,.95),rgba(8,16,24,.95));border:1px solid var(--line);border-radius:16px;padding:18px;min-height:180px}
+.card.wide{grid-column:span 8}.card.full{grid-column:1/-1}
+.kicker{font:700 .75rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--cyan);letter-spacing:.1em}
+.card h2{margin:8px 0 9px;font-size:1.1rem}
+.card p{color:var(--muted);line-height:1.5;margin:0 0 16px}
+.statusrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.badge{border:1px solid var(--line);border-radius:999px;padding:7px 10px;font:700 .76rem ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--muted)}
+.badge.ok{border-color:rgba(92,242,155,.45);color:var(--green)}
+.badge.warn{border-color:rgba(255,200,87,.5);color:var(--amber)}
+.badge.bad{border-color:rgba(255,107,107,.5);color:var(--red)}
+.tool{display:flex;flex-direction:column}
+.tool .btn{margin-top:auto}
+pre{margin:0;background:#03070a;border:1px solid #142533;border-radius:12px;padding:14px;overflow:auto;color:#acd9ea;min-height:145px;white-space:pre-wrap;word-break:break-word}
+section{padding:18px 0}
+footer{padding:42px 0 70px;color:var(--muted);font-size:.85rem}
+hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+@media(max-width:820px){.card,.card.wide{grid-column:1/-1}.navlink.hide-sm{display:none}.hero{padding-top:46px}}
 </style>
 </head>
 <body>
-<main>
-  <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-              border:1px solid #2b3440;background:#070a0e;border-radius:12px;
-              padding:10px 12px;margin-bottom:12px;color:#7ee787">
-    [ 918 MARAUDER PORTAL ] USB FLASH MODE
+<header><div class="wrap"><nav>
+  <div class="brand">918 <b>MERMAID</b></div>
+  <div class="spacer"></div>
+  <a class="navlink hide-sm" href="#tools">Device tools</a>
+  <a class="navlink hide-sm" href="#status">Live status</a>
+  <a class="btn" href="https://github.com/918Tech/esp32-mermaid-flipper" target="_blank" rel="noopener">Source</a>
+</nav></div></header>
+
+<main class="wrap">
+<section class="hero">
+  <div class="eyebrow">M3rMa1dS1r3n • PUBLIC PORTAL</div>
+  <h1>One Mermaid project.<br>CYD + S3 + Flipper.</h1>
+  <p class="lead">Public control surface for the consolidated 918 MERMAID project. Use the browser tools below for authorized hardware you own, inspect the production source, and verify the current public build state.</p>
+  <div class="actions">
+    <a class="btn primary" href="#tools">Open device tools</a>
+    <a class="btn" href="https://github.com/918Tech/esp32-mermaid-flipper/tree/feat/918-mermaid-production" target="_blank" rel="noopener">Production branch</a>
   </div>
-  <h1>918 Marauder • ESP32-S3 N16R8 CAM Flasher</h1>
-  <p>Marauder portal flasher for Android/Termux over USB-C ↔ USB-C. Target: ESP32-S3 N16R8 CAM.</p>
+  <div class="statusrow">
+    <span class="badge ok">PUBLIC REPOSITORY</span>
+    <span class="badge ok">ALL MERMAID INTEGRATION GREEN</span>
+    <span class="badge" id="serialBadge">WEB SERIAL: CHECKING</span>
+  </div>
+</section>
 
-  <section class="card">
-    <h2>1. Connect</h2>
-    <div id="support" class="status">Checking browser USB support…</div>
-    <label for="baud">Flash baud rate</label>
-    <select id="baud">
-      <option value="115200">115200 — safest</option>
-      <option value="460800" selected>460800 — recommended</option>
-      <option value="921600">921600 — fastest</option>
-    </select>
-    <div class="grid" style="margin-top:10px">
-      <button id="connect">Connect ESP32-S3</button>
-      <button id="reset" class="secondary" disabled>Hard reset</button>
+<section id="tools">
+<div class="grid">
+  <article class="card tool">
+    <div class="kicker">ESP32-S3-N16R8</div>
+    <h2>S3 CAM Web Flasher</h2>
+    <p>Browser-based Web Serial flasher for the Mermaid ESP32-S3 N16R8 camera/core target.</p>
+    <a class="btn primary" href="./s3-n16r8-flasher.html">Open S3 flasher</a>
+  </article>
+
+  <article class="card tool">
+    <div class="kicker">ESP32-WROOM-32E-N4</div>
+    <h2>CYD / WROOM Tool</h2>
+    <p>Existing WROOM32E-N4 and Flipper browser workflow preserved on the Pages branch.</p>
+    <a class="btn" href="./wroom32e-n4-flipper.html">Open WROOM tool</a>
+  </article>
+
+  <article class="card tool">
+    <div class="kicker">LEGACY / COMPATIBILITY</div>
+    <h2>Marauder Tool</h2>
+    <p>Legacy compatibility page retained separately from the canonical Mermaid production path.</p>
+    <a class="btn" href="./marauder-wroom32e-n4-flipper.html">Open legacy tool</a>
+  </article>
+
+  <article class="card wide">
+    <div class="kicker">CANONICAL SYSTEM</div>
+    <h2>Production architecture</h2>
+    <pre>918 MERMAID / M3rMa1dS1r3n
+│
+├── CYD / ESP32-WROOM-32E-N4
+├── ESP32-S3-N16R8 camera/core
+├── Flipper Zero external Mermaid app
+├── Codex provisioning + validation
+├── MermaidLink / shared protocol
+└── evidence-gated physical acceptance</pre>
+  </article>
+
+  <article class="card" id="status">
+    <div class="kicker">LIVE GITHUB</div>
+    <h2>Repository status</h2>
+    <p id="repoState">Loading public GitHub metadata…</p>
+    <div class="statusrow">
+      <span class="badge" id="visibility">VISIBILITY: …</span>
+      <span class="badge" id="branch">BRANCH: …</span>
     </div>
-    <div id="device" class="status" style="margin-top:10px">Not connected.</div>
-  </section>
+  </article>
 
-  <section class="card">
-    <h2>2. Firmware</h2>
-    <div class="mode">
-      <button id="modeMerged" class="active" type="button">Merged / factory BIN</button>
-      <button id="modeMulti" type="button">4-file build</button>
+  <article class="card full">
+    <div class="kicker">LATEST PUBLIC CI</div>
+    <h2>Production activity</h2>
+    <pre id="ciLog">Querying GitHub Actions…</pre>
+    <div class="actions">
+      <a class="btn" href="https://github.com/918Tech/esp32-mermaid-flipper/actions" target="_blank" rel="noopener">Open Actions</a>
+      <a class="btn" href="https://github.com/918Tech/esp32-mermaid-flipper/blob/feat/918-mermaid-production/MERMAID_CONSOLIDATION.md" target="_blank" rel="noopener">Consolidation manifest</a>
     </div>
-
-    <div id="mergedPanel">
-      <label for="mergedFile">Merged firmware .bin</label>
-      <input id="mergedFile" type="file" accept=".bin,application/octet-stream">
-      <label for="mergedOffset">Flash offset</label>
-      <input id="mergedOffset" type="text" value="0x0" class="addr" inputmode="text">
-      <p class="small">Use <span class="addr">0x0</span> for a merged/factory ESP32-S3 image.</p>
-    </div>
-
-    <div id="multiPanel" class="hidden">
-      <div class="slot">
-        <label>Bootloader — <span class="addr">0x0000</span></label>
-        <input id="bootloaderFile" type="file" accept=".bin,application/octet-stream">
-      </div>
-      <div class="slot">
-        <label>Partition table — <span class="addr">0x8000</span></label>
-        <input id="partitionsFile" type="file" accept=".bin,application/octet-stream">
-      </div>
-      <div class="slot">
-        <label>boot_app0 — <span class="addr">0xE000</span></label>
-        <input id="bootAppFile" type="file" accept=".bin,application/octet-stream">
-      </div>
-      <div class="slot">
-        <label>Application / firmware — <span class="addr">0x10000</span></label>
-        <input id="appFile" type="file" accept=".bin,application/octet-stream">
-      </div>
-      <p class="small">These are the common Arduino ESP32-S3 offsets. If your build reports different offsets, use a merged image instead.</p>
-    </div>
-
-    <label style="margin-top:14px">
-      <input id="eraseFirst" type="checkbox"> Erase entire flash before programming
-    </label>
-
-    <div class="grid" style="margin-top:12px">
-      <button id="flash" disabled>Flash firmware</button>
-      <button id="erase" class="danger" disabled>Erase flash only</button>
-    </div>
-    <progress id="progress" max="100" value="0"></progress>
-    <div id="progressText" class="small">0%</div>
-  </section>
-
-  <section class="card">
-    <h2>Console</h2>
-    <pre id="log">Ready.</pre>
-    <button id="clearLog" class="secondary">Clear console</button>
-  </section>
-
-  <section class="card">
-    <h2>Android notes</h2>
-    <p class="small">
-      Open this page in current Google Chrome from a localhost Termux server. The browser, not Termux,
-      owns the USB permission prompt. If connection fails, hold the board's BOOT button while tapping RESET,
-      release RESET, then release BOOT and press Connect again. Close the browser tab to release the USB device.
-    </p>
-  </section>
+  </article>
+</div>
+</section>
 </main>
 
-<script type="module">
-import { ESPLoader, Transport } from "https://unpkg.com/esptool-js@0.6.1/bundle.js";
+<footer><div class="wrap">
+  <hr>
+  <div>918 Technologies • MERMAID public project portal</div>
+  <div style="margin-top:6px">Hardware operations should be performed only on devices you own or are authorized to service. Source consolidation does not substitute for physical acceptance evidence.</div>
+</div></footer>
 
-const $ = (id) => document.getElementById(id);
-const support = $("support");
-const connectBtn = $("connect");
-const resetBtn = $("reset");
-const flashBtn = $("flash");
-const eraseBtn = $("erase");
-const deviceBox = $("device");
-const logEl = $("log");
-const progress = $("progress");
-const progressText = $("progressText");
-
-let transport = null;
-let loader = null;
-let mode = "merged";
-
-function log(msg) {
-  const line = typeof msg === "string" ? msg : String(msg);
-  logEl.textContent += (logEl.textContent ? "\n" : "") + line;
-  logEl.scrollTop = logEl.scrollHeight;
+<script>
+const serialBadge=document.getElementById("serialBadge");
+if(window.isSecureContext && "serial" in navigator){
+  serialBadge.textContent="WEB SERIAL: READY";
+  serialBadge.classList.add("ok");
+}else{
+  serialBadge.textContent="WEB SERIAL: UNAVAILABLE";
+  serialBadge.classList.add("warn");
 }
 
-function setDevice(text, kind = "") {
-  deviceBox.className = "status" + (kind ? " " + kind : "");
-  deviceBox.textContent = text;
-}
+async function loadGitHub(){
+  const repoState=document.getElementById("repoState");
+  const visibility=document.getElementById("visibility");
+  const branch=document.getElementById("branch");
+  const ciLog=document.getElementById("ciLog");
+  try{
+    const headers={"Accept":"application/vnd.github+json"};
+    const repo=await fetch("https://api.github.com/repos/918Tech/esp32-mermaid-flipper",{headers}).then(r=>{if(!r.ok)throw new Error("repo "+r.status);return r.json()});
+    repoState.textContent=repo.description||"918 MERMAID public repository";
+    visibility.textContent="VISIBILITY: "+String(repo.visibility||"public").toUpperCase();
+    visibility.classList.add(repo.private?"warn":"ok");
+    branch.textContent="DEFAULT: "+repo.default_branch;
 
-function setProgress(pct) {
-  const n = Math.max(0, Math.min(100, Number(pct) || 0));
-  progress.value = n;
-  progressText.textContent = `${n.toFixed(0)}%`;
-}
-
-function parseAddress(s) {
-  const v = String(s).trim();
-  const n = v.toLowerCase().startsWith("0x") ? parseInt(v, 16) : parseInt(v, 10);
-  if (!Number.isFinite(n) || n < 0) throw new Error(`Invalid flash address: ${s}`);
-  return n;
-}
-
-function bytesToBinaryString(bytes) {
-  const CHUNK = 0x2000;
-  let out = "";
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    out += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+    const runs=await fetch("https://api.github.com/repos/918Tech/esp32-mermaid-flipper/actions/runs?branch=feat%2F918-mermaid-production&per_page=5",{headers}).then(r=>{if(!r.ok)throw new Error("actions "+r.status);return r.json()});
+    const list=(runs.workflow_runs||[]).slice(0,5);
+    if(!list.length){ciLog.textContent="No public workflow runs returned.";return;}
+    ciLog.textContent=list.map(run=>{
+      const result=run.conclusion||run.status||"unknown";
+      return `${result.toUpperCase().padEnd(10)}  ${run.name}\n${run.head_sha.slice(0,12)}  ${run.html_url}`;
+    }).join("\n\n");
+  }catch(err){
+    repoState.textContent="Public repository available; live API status could not be loaded.";
+    ciLog.textContent="GitHub API status unavailable: "+err.message;
   }
-  return out;
 }
-
-async function fileToEntry(file, address) {
-  if (!file) return null;
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  log(`${file.name}: ${bytes.length.toLocaleString()} bytes @ 0x${address.toString(16).toUpperCase()}`);
-  return { data: bytesToBinaryString(bytes), address };
-}
-
-function terminal() {
-  return {
-    clean() {},
-    writeLine(data) { log(data); },
-    write(data) {
-      const s = String(data);
-      logEl.textContent += s;
-      logEl.scrollTop = logEl.scrollHeight;
-    }
-  };
-}
-
-function busy(on) {
-  connectBtn.disabled = on;
-  flashBtn.disabled = on || !loader;
-  eraseBtn.disabled = on || !loader;
-  resetBtn.disabled = on || !loader;
-}
-
-function browserCheck() {
-  if (!window.isSecureContext) {
-    support.className = "status bad";
-    support.textContent = "Not a secure context. Serve this file from http://127.0.0.1 or https://.";
-    connectBtn.disabled = true;
-    return false;
-  }
-  if (!("serial" in navigator)) {
-    support.className = "status bad";
-    support.textContent = "Web Serial is unavailable. Update Google Chrome on Android and open this page in Chrome.";
-    connectBtn.disabled = true;
-    return false;
-  }
-  support.className = "status ok";
-  support.textContent = "Web Serial ready.";
-  return true;
-}
-
-$("modeMerged").addEventListener("click", () => {
-  mode = "merged";
-  $("modeMerged").classList.add("active");
-  $("modeMulti").classList.remove("active");
-  $("mergedPanel").classList.remove("hidden");
-  $("multiPanel").classList.add("hidden");
-});
-
-$("modeMulti").addEventListener("click", () => {
-  mode = "multi";
-  $("modeMulti").classList.add("active");
-  $("modeMerged").classList.remove("active");
-  $("multiPanel").classList.remove("hidden");
-  $("mergedPanel").classList.add("hidden");
-});
-
-$("clearLog").addEventListener("click", () => {
-  logEl.textContent = "";
-});
-
-connectBtn.addEventListener("click", async () => {
-  if (!browserCheck()) return;
-  busy(true);
-  setProgress(0);
-  try {
-    log("Requesting USB serial device...");
-    const port = await navigator.serial.requestPort();
-    const info = typeof port.getInfo === "function" ? port.getInfo() : {};
-    log(`USB VID: ${info.usbVendorId ? "0x" + info.usbVendorId.toString(16) : "?"}`);
-    log(`USB PID: ${info.usbProductId ? "0x" + info.usbProductId.toString(16) : "?"}`);
-
-    transport = new Transport(port, false);
-    const baudrate = Number($("baud").value);
-    loader = new ESPLoader({
-      transport,
-      baudrate,
-      terminal: terminal(),
-      debugLogging: false
-    });
-
-    setDevice("Connecting and detecting chip…", "warn");
-    await loader.main("default_reset");
-
-    const chipName = loader?.chip?.CHIP_NAME || "Unknown Espressif chip";
-    let flashText = "unknown";
-    try {
-      const kb = await loader.getFlashSize();
-      flashText = kb >= 1024 ? `${kb / 1024} MB` : `${kb} KB`;
-    } catch (_) {}
-
-    let featuresText = "";
-    try {
-      const features = await loader.chip.getChipFeatures(loader);
-      if (Array.isArray(features)) featuresText = features.join(", ");
-    } catch (_) {}
-
-    const isS3 = String(chipName).toUpperCase().includes("ESP32-S3");
-    setDevice(
-      `${chipName} • flash ${flashText}${featuresText ? " • " + featuresText : ""}`,
-      isS3 ? "ok" : "warn"
-    );
-    if (!isS3) log("WARNING: Connected chip does not identify as ESP32-S3.");
-    log(`Connected: ${chipName}`);
-  } catch (err) {
-    loader = null;
-    transport = null;
-    const msg = err instanceof Error ? err.message : String(err);
-    setDevice(`Connection failed: ${msg}`, "bad");
-    log(`ERROR: ${msg}`);
-  } finally {
-    busy(false);
-  }
-});
-
-resetBtn.addEventListener("click", async () => {
-  if (!loader) return;
-  busy(true);
-  try {
-    log("Hard reset...");
-    await loader.hardReset();
-    log("Reset complete.");
-  } catch (err) {
-    log(`RESET ERROR: ${err instanceof Error ? err.message : String(err)}`);
-  } finally {
-    busy(false);
-  }
-});
-
-eraseBtn.addEventListener("click", async () => {
-  if (!loader) return;
-  if (!confirm("Erase the entire ESP32 flash? This deletes firmware, partitions, NVS, and stored settings.")) return;
-  busy(true);
-  setProgress(0);
-  try {
-    log("Erasing entire flash...");
-    await loader.eraseFlash();
-    log("Erase complete.");
-    setProgress(100);
-  } catch (err) {
-    log(`ERASE ERROR: ${err instanceof Error ? err.message : String(err)}`);
-  } finally {
-    busy(false);
-  }
-});
-
-flashBtn.addEventListener("click", async () => {
-  if (!loader) return;
-  busy(true);
-  setProgress(0);
-
-  try {
-    const fileArray = [];
-
-    if (mode === "merged") {
-      const file = $("mergedFile").files[0];
-      if (!file) throw new Error("Choose a merged/factory .bin first.");
-      const address = parseAddress($("mergedOffset").value);
-      fileArray.push(await fileToEntry(file, address));
-    } else {
-      const slots = [
-        [$("bootloaderFile").files[0], 0x0000],
-        [$("partitionsFile").files[0], 0x8000],
-        [$("bootAppFile").files[0], 0xE000],
-        [$("appFile").files[0], 0x10000],
-      ];
-      for (const [file, address] of slots) {
-        const entry = await fileToEntry(file, address);
-        if (entry) fileArray.push(entry);
-      }
-      if (!fileArray.length) throw new Error("Choose at least one .bin file.");
-    }
-
-    log(`Starting flash: ${fileArray.length} image(s).`);
-    await loader.writeFlash({
-      fileArray,
-      flashSize: "keep",
-      flashMode: "keep",
-      flashFreq: "keep",
-      eraseAll: $("eraseFirst").checked,
-      compress: true,
-      reportProgress(fileIndex, written, total) {
-        const perFile = total ? written / total : 0;
-        const overall = ((fileIndex + perFile) / fileArray.length) * 100;
-        setProgress(overall);
-      }
-    });
-
-    setProgress(100);
-    log("FLASH COMPLETE.");
-    log("Hard resetting board...");
-    await loader.hardReset();
-    setDevice("Flash complete. Board reset.", "ok");
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    setDevice(`Flash failed: ${msg}`, "bad");
-    log(`FLASH ERROR: ${msg}`);
-  } finally {
-    busy(false);
-  }
-});
-
-browserCheck();
+loadGitHub();
 </script>
 </body>
 </html>
