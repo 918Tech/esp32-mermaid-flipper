@@ -33,10 +33,7 @@ jobs:
           bash -n android/termux/bootstrap.sh
           bash -n android/termux/cyd-build-export.sh
           bash -n android/termux/cyd-codex.sh
-          bash -n android/termux/open-cyd-flasher.sh
           bash -n android/termux/cyd-flash-termux.sh
-          bash -n android/termux/start-cyd-nr-flasher.sh
-          python -m py_compile android/termux/cyd-nr-server.py
 
       - name: Build merged CYD factory image
         env:
