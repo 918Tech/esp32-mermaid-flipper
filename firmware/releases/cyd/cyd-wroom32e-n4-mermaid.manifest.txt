@@ -6,4 +6,4 @@ bytes=389040
 sha256=6ac82c140c0ab2c7b2f0c4303a2ac3511adbb0b50b98911e20a8006aa2e8215f
 expected_identity=MERMAID_HELLO role=CYD hw=ESP32-WROOM-32E-N4 proto=MVP1
 source_branch=feat/cyd-android-codex-cli-automation
-source_sha=dfae86f5b817c880c478c0cda79df2d362098368
+source_sha=a225bab6a089b56220f51974afcb9ad11f174a3b
